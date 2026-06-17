@@ -23,10 +23,10 @@ internal static class Program
         var primaryInstance = singleInstance ?? throw new InvalidOperationException("Primary instance coordinator was not created.");
         using (primaryInstance)
         {
-            var client = ProcessSwitcherClient.CreateDefault();
-            var claudeLoginLauncher = WindowsTerminalClaudeLoginLauncher.CreateDefault();
+            var client = NativeSwitcherClient.CreateDefault();
+            var loginLauncher = NativeInteractiveLauncher.CreateDefault();
             var settingsStore = JsonSettingsStore.CreateDefault();
-            var service = new SwitcherService(client, claudeLoginLauncher, settingsStore);
+            var service = new SwitcherService(client, loginLauncher, settingsStore);
             using var context = new TrayApplicationContext(service);
             primaryInstance.ActivationRequested += (_, _) => context.ShowPopupFromExternalActivation();
             primaryInstance.Start();

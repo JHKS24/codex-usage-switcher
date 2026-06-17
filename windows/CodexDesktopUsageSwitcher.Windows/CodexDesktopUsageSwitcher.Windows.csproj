@@ -27,7 +27,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\switcher\codex-desktop-switch" Link="codex-desktop-switch.py" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\assets\app.ico" Link="assets\app.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
