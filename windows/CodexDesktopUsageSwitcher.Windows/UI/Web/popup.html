@@ -64,16 +64,16 @@
 <div class="wrap" id="root">
   <div class="row">
     <div style="display:flex;align-items:center;gap:8px;">
-      <span class="hdr-title">Codex 사용량</span>
-      <span class="chip ok" id="freshChip"><span class="dot"></span><span id="freshText">불러오는 중</span></span>
+      <span class="hdr-title" data-i18n="popup.title">Codex 사용량</span>
+      <span class="chip ok" id="freshChip"><span class="dot"></span><span id="freshText" data-i18n="popup.fresh.loading">불러오는 중</span></span>
     </div>
     <div class="icons">
-      <button class="icon" id="btnRefresh" title="새로고침" aria-label="새로고침">&#x21bb;</button>
-      <button class="icon" id="btnSettings" title="설정" aria-label="설정">&#x2699;</button>
-      <button class="icon" id="btnClose" title="닫기" aria-label="닫기">&#x2715;</button>
+      <button class="icon" id="btnRefresh" title="새로고침" aria-label="새로고침" data-i18n-title="common.refresh">&#x21bb;</button>
+      <button class="icon" id="btnSettings" title="설정" aria-label="설정" data-i18n-title="common.settings">&#x2699;</button>
+      <button class="icon" id="btnClose" title="닫기" aria-label="닫기" data-i18n-title="common.close">&#x2715;</button>
     </div>
   </div>
-  <div class="sub" id="subText">10분마다 자동 갱신</div>
+  <div class="sub" id="subText" data-i18n="popup.autoRefreshNote">10분마다 자동 갱신</div>
 
   <div class="card" id="codexCard">
     <div class="card-head">
@@ -81,12 +81,12 @@
       <span class="name" id="codexName">—</span>
     </div>
     <div class="lim">
-      <div class="lim-top"><span class="k">5시간 한도</span><span class="v" id="cx5v">—</span></div>
+      <div class="lim-top"><span class="k" data-i18n="usage.fiveHourLimit">5시간 한도</span><span class="v" id="cx5v">—</span></div>
       <div class="bar"><i id="cx5b"></i></div>
       <div class="reset" id="cx5r"></div>
     </div>
     <div class="lim">
-      <div class="lim-top"><span class="k">주간 한도</span><span class="v" id="cxwv">—</span></div>
+      <div class="lim-top"><span class="k" data-i18n="usage.weeklyLimit">주간 한도</span><span class="v" id="cxwv">—</span></div>
       <div class="bar"><i id="cxwb"></i></div>
       <div class="reset" id="cxwr"></div>
     </div>
@@ -96,16 +96,16 @@
     <div class="card-head">
       <span class="label">CLAUDE</span>
       <span class="chip ok" id="clChip" style="display:none;"><span class="dot"></span><span id="clState">—</span></span>
-      <button class="btn" id="clLogin" style="display:none;padding:4px 10px;">로그인</button>
+      <button class="btn" id="clLogin" style="display:none;padding:4px 10px;" data-i18n="common.login">로그인</button>
     </div>
     <div id="clBody">
       <div class="lim">
-        <div class="lim-top"><span class="k">5시간 한도</span><span class="v" id="cl5v">—</span></div>
+        <div class="lim-top"><span class="k" data-i18n="usage.fiveHourLimit">5시간 한도</span><span class="v" id="cl5v">—</span></div>
         <div class="bar"><i id="cl5b"></i></div>
         <div class="reset" id="cl5r"></div>
       </div>
       <div class="lim">
-        <div class="lim-top"><span class="k">주간 한도</span><span class="v" id="clwv">—</span></div>
+        <div class="lim-top"><span class="k" data-i18n="usage.weeklyLimit">주간 한도</span><span class="v" id="clwv">—</span></div>
         <div class="bar"><i id="clwb"></i></div>
         <div class="reset" id="clwr"></div>
       </div>
@@ -114,20 +114,27 @@
   </div>
 
   <div class="card">
-    <div class="label" style="margin-bottom:9px;">프로필</div>
+    <div class="label" style="margin-bottom:9px;" data-i18n="popup.profilesLabel">프로필</div>
     <div class="plist" id="plist"></div>
   </div>
 
   <div class="foot">
-    <button class="btn primary" id="btnSwitch" disabled>&#x21c4; 프로필 전환</button>
-    <button class="btn" id="btnDash">대시보드</button>
-    <button class="btn" id="btnQuit">종료</button>
+    <button class="btn primary" id="btnSwitch" disabled>&#x21c4; <span data-i18n="popup.switchProfile">프로필 전환</span></button>
+    <button class="btn" id="btnDash" data-i18n="tray.dashboard">대시보드</button>
+    <button class="btn" id="btnQuit" data-i18n="tray.quit">종료</button>
   </div>
   <div class="status" id="statusLine" style="display:none;"></div>
 </div>
 
 <script>
   "use strict";
+  const I18N = window.__I18N__ || {};
+  function t(key, fallback){ return Object.prototype.hasOwnProperty.call(I18N, key) ? I18N[key] : (fallback !== undefined ? fallback : key); }
+  function applyI18n(root){
+    (root||document).querySelectorAll('[data-i18n]').forEach(function(el){ var k=el.getAttribute('data-i18n'); if(Object.prototype.hasOwnProperty.call(I18N,k)) el.textContent=I18N[k]; });
+    (root||document).querySelectorAll('[data-i18n-title]').forEach(function(el){ var k=el.getAttribute('data-i18n-title'); if(Object.prototype.hasOwnProperty.call(I18N,k)){ el.title=I18N[k]; el.setAttribute('aria-label', I18N[k]); } });
+  }
+  document.documentElement.lang = window.__LANG__ || 'ko';
   var selected = null;
   function post(msg){ try{ window.chrome.webview.postMessage(msg); }catch(e){} }
   function colorOf(level){
@@ -149,11 +156,11 @@
   }
   function render(d){
     if(!d) return;
-    document.getElementById("freshText").textContent = d.busy? "갱신 중" : (d.freshText||"방금 갱신");
-    document.getElementById("subText").textContent = d.subText || "10분마다 자동 갱신";
+    document.getElementById("freshText").textContent = d.busy? t("popup.fresh.refreshing", "갱신 중") : (d.freshText||t("popup.fresh.justNow", "방금 갱신"));
+    document.getElementById("subText").textContent = d.subText || t("popup.autoRefreshNote", "10분마다 자동 갱신");
     // Codex
     document.getElementById("codexName").innerHTML = (d.codex&&d.codex.profile? escapeHtml(d.codex.profile):"—") +
-      (d.codex&&d.codex.active? ' <span class="pill">활성</span>':'');
+      (d.codex&&d.codex.active? ' <span class="pill">'+escapeHtml(t("usage.activeBadge", "활성"))+'</span>':'');
     setLimit("cx5", d.codex&&d.codex.fiveHour);
     setLimit("cxw", d.codex&&d.codex.week);
     // Claude
@@ -162,19 +169,19 @@
         body=document.getElementById("clBody"), msg=document.getElementById("clMsg");
     if(cl.connected){
       chip.style.display=""; login.style.display="none";
-      document.getElementById("clState").textContent = cl.state||"연결됨";
+      document.getElementById("clState").textContent = cl.state||t("popup.claude.connected", "연결됨");
       var hasData=(cl.fiveHour&&cl.fiveHour.percent!=null)||(cl.week&&cl.week.percent!=null);
       if(hasData){ body.style.display=""; msg.style.display="none";
         setLimit("cl5", cl.fiveHour); setLimit("clw", cl.week);
-      } else { body.style.display="none"; msg.style.display=""; msg.textContent=cl.message||"표시값 없음"; }
+      } else { body.style.display="none"; msg.style.display=""; msg.textContent=cl.message||t("popup.claude.noData", "표시값 없음"); }
     } else {
       chip.style.display="none"; login.style.display=""; body.style.display="none";
-      msg.style.display=""; msg.textContent=cl.message||"로그인 필요";
+      msg.style.display=""; msg.textContent=cl.message||t("common.loginRequired", "로그인 필요");
     }
     // profiles
     var list=document.getElementById("plist"); list.innerHTML="";
     var profs=(d.profiles||[]);
-    if(profs.length===0){ var e=document.createElement("div"); e.className="empty"; e.textContent="등록된 프로필이 없습니다. 설정에서 추가하세요."; list.appendChild(e); }
+    if(profs.length===0){ var e=document.createElement("div"); e.className="empty"; e.textContent=t("popup.profiles.empty", "등록된 프로필이 없습니다. 설정에서 추가하세요."); list.appendChild(e); }
     // Resolve the selection BEFORE building rows so a refresh keeps the highlight
     // (C# posts selected=null; the JS-side selection is the source of truth).
     selected = d.selected || selected;
@@ -194,7 +201,7 @@
     refreshSwitch(d);
     // status
     var st=document.getElementById("statusLine");
-    if(d.error){ st.style.display=""; st.className="status err"; st.textContent="갱신 실패: "+d.error; }
+    if(d.error){ st.style.display=""; st.className="status err"; st.textContent=t("error.refreshFailed", "갱신 실패: {0}").replace("{0}", d.error); }
     else { st.style.display="none"; }
     requestAnimationFrame(reportSize);
   }
@@ -220,6 +227,7 @@
 
   window.chrome.webview.addEventListener("message", function(e){ render(e.data); });
   window.addEventListener("resize", reportSize);
+  applyI18n();
   post({action:"ready"});
   reportSize();
 </script>

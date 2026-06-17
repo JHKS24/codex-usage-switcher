@@ -34,7 +34,7 @@ internal sealed class DashboardForm : Form
     public DashboardForm(UsageHistoryService history)
     {
         _history = history;
-        Text = "사용량 대시보드";
+        Text = Localizer.L("dashboard.title");
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Theme.Body;
         ShowInTaskbar = true;
@@ -92,6 +92,7 @@ internal sealed class DashboardForm : Form
             _core.Settings.IsStatusBarEnabled = false;
             _core.WebMessageReceived += OnWebMessage;
             _core.NavigationCompleted += OnNavigationCompleted;
+            await _core.AddScriptToExecuteOnDocumentCreatedAsync(WebLocalization.DocumentCreatedScript());
             _core.NavigateToString(Html);
         }
         catch (Exception ex)

@@ -77,29 +77,50 @@
 <div id="dash">
   <div class="hdr">
     <div class="hdr-left">
-      <span class="hdr-title">사용량 대시보드</span>
+      <span class="hdr-title" data-i18n="dashboard.title">사용량 대시보드</span>
       <span class="hdr-when" id="gen"></span>
     </div>
     <div class="hdr-right">
       <span class="seg" id="seg">
-        <span class="tab" data-k="codex">Codex</span>
-        <span class="tab" data-k="claude">Claude</span>
+        <span class="tab" data-k="codex" data-i18n="dashboard.tab.codex">Codex</span>
+        <span class="tab" data-k="claude" data-i18n="dashboard.tab.claude">Claude</span>
       </span>
-      <button class="btn" id="btnRefresh" title="새로고침">&#x21bb; 새로고침</button>
+      <button class="btn" id="btnRefresh" title="새로고침" data-i18n-title="common.refresh">&#x21bb; <span data-i18n="common.refresh">새로고침</span></button>
     </div>
   </div>
   <div id="body">
-    <div class="loading">불러오는 중&hellip;</div>
+    <div class="loading" data-i18n="common.loading">불러오는 중&hellip;</div>
   </div>
 </div>
 
 <script>
   "use strict";
 
+  // ---- i18n runtime ---------------------------------------------------------
+  var I18N = window.__I18N__ || {};
+  function t(key, fallback) {
+    return Object.prototype.hasOwnProperty.call(I18N, key) ? I18N[key] : (fallback !== undefined ? fallback : key);
+  }
+  function applyI18n(root) {
+    (root || document).querySelectorAll('[data-i18n]').forEach(function (el) {
+      var k = el.getAttribute('data-i18n');
+      if (Object.prototype.hasOwnProperty.call(I18N, k)) el.textContent = I18N[k];
+    });
+    (root || document).querySelectorAll('[data-i18n-title]').forEach(function (el) {
+      var k = el.getAttribute('data-i18n-title');
+      if (Object.prototype.hasOwnProperty.call(I18N, k)) { el.title = I18N[k]; el.setAttribute('aria-label', I18N[k]); }
+    });
+  }
+  document.documentElement.lang = window.__LANG__ || 'ko';
+
   // Top-5 model accent palette (rank order), then gray for "기타".
   var PALETTE = ["#46BAC9", "#FFB74D", "#F2785C", "#58C98F", "#8B82E8"];
   var OTHER = "#6E7B88";
-  var WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
+  var WEEKDAYS = [
+    t("usage.weekday.mon", "월"), t("usage.weekday.tue", "화"), t("usage.weekday.wed", "수"),
+    t("usage.weekday.thu", "목"), t("usage.weekday.fri", "금"), t("usage.weekday.sat", "토"),
+    t("usage.weekday.sun", "일")
+  ];
 
   // Stored posted state.
   var providers = [];          // [{key,title,cost,insights}]
@@ -171,7 +192,7 @@
     var arc = has
       ? '<circle cx="37" cy="37" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + c + '" stroke-dashoffset="' + off + '" transform="rotate(-90 37 37)"/>'
       : "";
-    var label = has ? pct + "%" : "—";
+    var label = has ? pct + "%" : t("common.dash", "—");
     return '<svg width="74" height="74" viewBox="0 0 74 74" id="' + id + '">' +
       '<circle cx="37" cy="37" r="' + r + '" fill="none" stroke="#2A3340" stroke-width="7"/>' +
       arc +
@@ -208,7 +229,8 @@
       var y = padT + chartH;
       var by = p.byModel || {};
       var otherSum = p.totalTokens;
-      var title = dayLabel(p.dayStartMs) + " · " + compactText(p.totalTokens) + " 토큰";
+      var title = t("usage.tooltip.barDay", "{0} · {1} 토큰")
+        .replace("{0}", dayLabel(p.dayStartMs)).replace("{1}", compactText(p.totalTokens));
       keys.forEach(function (m, ki) {
         var v = by[m] || 0;
         otherSum -= v;
@@ -240,7 +262,7 @@
       return '<span class="leg"><span class="sw" style="background:' + colorFor(i) + '"></span>' + escapeHtml(m) + '</span>';
     });
     if (ranking.hasOther) {
-      items.push('<span class="leg"><span class="sw" style="background:' + OTHER + '"></span>기타</span>');
+      items.push('<span class="leg"><span class="sw" style="background:' + OTHER + '"></span>' + escapeHtml(t("common.other", "기타")) + '</span>');
     }
     return items.join("");
   }
@@ -266,7 +288,8 @@
         var v = hrow[h] || 0;
         var op = v <= 0 ? 0.06 : 0.14 + 0.86 * Math.sqrt(v / max);
         var x = lab + h * (cw + gap);
-        var title = WEEKDAYS[d] + " " + h + "시 · " + compactText(v) + " 토큰";
+        var title = t("usage.tooltip.heatCell", "{0} {1}시 · {2} 토큰")
+          .replace("{0}", WEEKDAYS[d]).replace("{1}", h).replace("{2}", compactText(v));
         g += '<rect x="' + x.toFixed(2) + '" y="' + ry + '" width="' + cw.toFixed(2) +
           '" height="' + ch + '" rx="2" fill="rgba(70,186,201,' + op.toFixed(2) + ')"><title>' +
           escapeHtml(title) + '</title></rect>';
@@ -300,7 +323,7 @@
   function turnRows(rows, ranking, cost) {
     if (!rows || rows.length === 0) {
       var span = cost ? 7 : 6;
-      return '<tr><td colspan="' + span + '" style="text-align:center;color:#6E7B88;padding:18px 0;">데이터 없음</td></tr>';
+      return '<tr><td colspan="' + span + '" style="text-align:center;color:#6E7B88;padding:18px 0;">' + escapeHtml(t("common.noData", "데이터 없음")) + '</td></tr>';
     }
     var colors = tableColors(rows, ranking);
     var maxAvg = 0;
@@ -312,7 +335,7 @@
       var avgCell = '<span class="avgcell"><span class="avgbar"><i style="width:' + pct.toFixed(0) +
         '%;background:' + color + ';"></i></span>' + intStr(m.avgTokensPerTurn) + '</span>';
       var costCell = cost
-        ? '<td>' + (m.avgCostPerTurn != null ? money(m.avgCostPerTurn) : "—") + '</td>'
+        ? '<td>' + (m.avgCostPerTurn != null ? money(m.avgCostPerTurn) : t("common.dash", "—")) + '</td>'
         : "";
       return '<tr><td><span class="mdot" style="background:' + color + ';"></span>' + escapeHtml(m.model) + '</td>' +
         '<td>' + intStr(m.turns) + '</td>' +
@@ -338,13 +361,13 @@
       var sumCost = daily.reduce(function (a, d) { return a + (d.costUsd || 0); }, 0);
       cost4 = '<div class="v">' + money(sumCost) + '</div>';
     } else {
-      cost4 = '<div class="v muted">Codex 비공개</div>';
+      cost4 = '<div class="v muted">' + escapeHtml(t("usage.cost.codexHidden", "Codex 비공개")) + '</div>';
     }
     return '<div class="cards">' +
-      '<div class="scard"><div class="k">14일 토큰</div><div class="v">' + compactHtml(sumTokens) + '</div></div>' +
-      '<div class="scard"><div class="k">턴 (7일)</div><div class="v">' + intStr(totalTurns) + '</div></div>' +
-      '<div class="scard"><div class="k">평균 / 턴</div><div class="v">' + compactHtml(avgPerTurn) + '</div></div>' +
-      '<div class="scard"><div class="k">추정 비용</div>' + cost4 + '</div>' +
+      '<div class="scard"><div class="k">' + escapeHtml(t("usage.card.tokens14d", "14일 토큰")) + '</div><div class="v">' + compactHtml(sumTokens) + '</div></div>' +
+      '<div class="scard"><div class="k">' + escapeHtml(t("usage.card.turns7d", "턴 (7일)")) + '</div><div class="v">' + intStr(totalTurns) + '</div></div>' +
+      '<div class="scard"><div class="k">' + escapeHtml(t("usage.card.avgPerTurn", "평균 / 턴")) + '</div><div class="v">' + compactHtml(avgPerTurn) + '</div></div>' +
+      '<div class="scard"><div class="k">' + escapeHtml(t("usage.card.estCost", "추정 비용")) + '</div>' + cost4 + '</div>' +
       '</div>';
   }
 
@@ -360,12 +383,12 @@
   }
 
   function render() {
-    document.getElementById("gen").textContent = generatedAt ? "갱신 · " + generatedAt : "";
+    document.getElementById("gen").textContent = generatedAt ? t("dashboard.generatedAt", "갱신 · {0}").replace("{0}", generatedAt) : "";
     syncTabs();
     var body = document.getElementById("body");
     var p = activeProvider();
     if (!p) {
-      body.innerHTML = '<div class="loading">불러오는 중&hellip;</div>';
+      body.innerHTML = '<div class="loading">' + escapeHtml(t("common.loading", "불러오는 중…")) + '</div>';
       return;
     }
     var ins = p.insights || {};
@@ -375,34 +398,39 @@
 
     var html = summaryCards(p);
     html += '<div class="limits">' +
-      limitCard("d5", "5시간 한도", lim.fiveHour) +
-      limitCard("dw", "주간 한도", lim.week) +
+      limitCard("d5", escapeHtml(t("usage.limit.fiveHour", "5시간 한도")), lim.fiveHour) +
+      limitCard("dw", escapeHtml(t("usage.limit.weekly", "주간 한도")), lim.week) +
       '</div>';
 
     if (sumTokens <= 0) {
-      body.innerHTML = html + '<div class="panel"><div class="no-data">데이터 없음</div></div>';
+      body.innerHTML = html + '<div class="panel"><div class="no-data">' + escapeHtml(t("common.noData", "데이터 없음")) + '</div></div>';
       return;
     }
 
     var ranking = rankModels(daily);
     html += '<div class="panel"><div class="panel-head">' +
-      '<span class="panel-title">최근 14일</span>' +
+      '<span class="panel-title">' + escapeHtml(t("dashboard.panel.last14d", "최근 14일")) + '</span>' +
       '<span class="legend" id="barlegend">' + barLegend(ranking) + '</span></div>' +
       barsSvg(daily, ranking) + '</div>';
 
     html += '<div class="panel"><div class="panel-head">' +
-      '<span class="panel-title">요일 &times; 시간</span>' +
-      '<span class="hm-legend">적음 <span class="hm-ramp">' +
+      '<span class="panel-title">' + escapeHtml(t("dashboard.panel.dayByHour", "요일 × 시간")) + '</span>' +
+      '<span class="hm-legend">' + escapeHtml(t("dashboard.heatmap.legendLow", "적음")) + ' <span class="hm-ramp">' +
       '<span style="background:rgba(70,186,201,.18)"></span>' +
       '<span style="background:rgba(70,186,201,.42)"></span>' +
       '<span style="background:rgba(70,186,201,.7)"></span>' +
-      '<span style="background:rgba(70,186,201,1)"></span></span> 많음</span></div>' +
+      '<span style="background:rgba(70,186,201,1)"></span></span> ' + escapeHtml(t("dashboard.heatmap.legendHigh", "많음")) + '</span></div>' +
       heatSvg(ins.heatmap || []) + '</div>';
 
-    html += '<div class="panel"><div class="panel-title" style="margin-bottom:10px;">턴당 토큰 · 최근 7일</div>' +
+    html += '<div class="panel"><div class="panel-title" style="margin-bottom:10px;">' + escapeHtml(t("dashboard.panel.tokensPerTurn7d", "턴당 토큰 · 최근 7일")) + '</div>' +
       '<table><thead><tr>' +
-      '<th>모델</th><th>턴</th><th class="avg">평균</th><th>중앙값</th><th>P90</th><th>출력</th>' +
-      (p.cost ? "<th>턴당 $</th>" : "") +
+      '<th>' + escapeHtml(t("usage.table.model", "모델")) + '</th>' +
+      '<th>' + escapeHtml(t("usage.table.turns", "턴")) + '</th>' +
+      '<th class="avg">' + escapeHtml(t("usage.table.avg", "평균")) + '</th>' +
+      '<th>' + escapeHtml(t("usage.table.median", "중앙값")) + '</th>' +
+      '<th>' + escapeHtml(t("usage.table.p90", "P90")) + '</th>' +
+      '<th>' + escapeHtml(t("usage.table.output", "출력")) + '</th>' +
+      (p.cost ? "<th>" + escapeHtml(t("usage.table.costPerTurn", "턴당 $")) + "</th>" : "") +
       '</tr></thead><tbody>' + turnRows(ins.modelTurns || [], ranking, p.cost) + '</tbody></table></div>';
 
     body.innerHTML = html;
@@ -412,7 +440,7 @@
   function handle(d) {
     if (!d || !d.type) return;
     if (d.type === "loading") {
-      document.getElementById("body").innerHTML = '<div class="loading">불러오는 중&hellip;</div>';
+      document.getElementById("body").innerHTML = '<div class="loading">' + escapeHtml(t("common.loading", "불러오는 중…")) + '</div>';
       return;
     }
     if (d.type === "data") {
@@ -437,6 +465,7 @@
     if (k && k !== active) { active = k; render(); }
   });
   window.chrome.webview.addEventListener("message", function (e) { handle(e.data); });
+  applyI18n();
   post({ action: "ready" });
 </script>
 </body>

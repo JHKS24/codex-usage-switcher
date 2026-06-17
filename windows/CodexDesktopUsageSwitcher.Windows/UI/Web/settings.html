@@ -98,6 +98,15 @@
   .claude-status .cs-label { font-size:12px; color:var(--txt2); }
   .claude-status .cs-msg { font-size:11px; color:var(--txt3); }
   .cs-limits { font-size:11px; color:var(--txt2); margin:-4px 0 12px 0; line-height:1.6; }
+
+  /* language selector */
+  .lang-row { display:flex; }
+  .lang-select {
+    background:#1A222B; border:1px solid var(--line2); border-radius:9px;
+    color:var(--txt); font-size:13px; padding:8px 11px; outline:none;
+    font-family:inherit; cursor:pointer; min-width:160px;
+  }
+  .lang-select:focus { border-color:var(--teal); }
 </style>
 </head>
 <body>
@@ -105,48 +114,59 @@
   <div class="panel">
     <div class="head">
       <div>
-        <h1>설정</h1>
-        <div class="subtitle">Codex 프로필 · 작업표시줄 지표 · 로그인</div>
+        <h1 data-i18n="settings.title">설정</h1>
+        <div class="subtitle" data-i18n="settings.subtitle">Codex 프로필 · 작업표시줄 지표 · 로그인</div>
       </div>
-      <span class="status" id="status">불러오는 중</span>
+      <span class="status" id="status" data-i18n="common.loading">불러오는 중</span>
+    </div>
+
+    <!-- 언어 선택 카드 -->
+    <div class="card">
+      <div class="card-title" data-i18n="settings.language.label">Language</div>
+      <div class="lang-row">
+        <select id="langSelect" class="lang-select">
+          <option value="en">English</option>
+          <option value="ko">한국어</option>
+        </select>
+      </div>
     </div>
 
     <!-- 프로필 카드 -->
     <div class="card">
-      <div class="card-title">프로필</div>
+      <div class="card-title" data-i18n="settings.profiles.cardTitle">프로필</div>
       <div id="profiles"></div>
       <div class="add">
-        <div class="add-label">＋ 새 프로필 추가</div>
+        <div class="add-label" data-i18n="settings.profiles.add">＋ 새 프로필 추가</div>
         <div class="add-row">
-          <input id="pname" placeholder="프로필 이름 (work, edu…)" autocomplete="off" spellcheck="false" />
-          <button class="btn-primary" data-act="codexLogin">Codex 로그인</button>
-          <button class="btn-ghost" data-act="saveCurrent">현재 계정 저장</button>
+          <input id="pname" placeholder="프로필 이름 (work, edu…)" data-i18n-placeholder="settings.profiles.namePlaceholder" autocomplete="off" spellcheck="false" />
+          <button class="btn-primary" data-act="codexLogin" data-i18n="login.codexLogin">Codex 로그인</button>
+          <button class="btn-ghost" data-act="saveCurrent" data-i18n="settings.profiles.saveCurrent">현재 계정 저장</button>
         </div>
-        <div class="hint">이름 입력 후 · Codex 로그인(새 계정) 또는 현재 로그인 저장</div>
+        <div class="hint" data-i18n="settings.profiles.addHint">이름 입력 후 · Codex 로그인(새 계정) 또는 현재 로그인 저장</div>
       </div>
-      <div class="folder"><a data-act="openFolder">📁 프로필 폴더 열기</a></div>
+      <div class="folder"><a data-act="openFolder" data-i18n="settings.profiles.openFolder">📁 프로필 폴더 열기</a></div>
     </div>
 
     <!-- 작업표시줄 지표 카드 -->
     <div class="card">
-      <div class="card-title">작업표시줄 지표</div>
-      <div class="card-sub">알림 영역에 숫자 아이콘으로 띄울 항목</div>
+      <div class="card-title" data-i18n="settings.metrics.cardTitle">작업표시줄 지표</div>
+      <div class="card-sub" data-i18n="settings.metrics.cardSub">알림 영역에 숫자 아이콘으로 띄울 항목</div>
       <div id="indicators"></div>
     </div>
 
     <!-- 로그인 · 진단 카드 -->
     <div class="card">
-      <div class="card-title">로그인 · 진단</div>
+      <div class="card-title" data-i18n="settings.diagnostics.cardTitle">로그인 · 진단</div>
       <div class="claude-status">
-        <span class="cs-label">Claude 사용량</span>
-        <span id="claudeChip" class="chip auth-no">로그인 필요</span>
+        <span class="cs-label" data-i18n="settings.diagnostics.claudeUsageLabel">Claude 사용량</span>
+        <span id="claudeChip" class="chip auth-no" data-i18n="common.loginRequired">로그인 필요</span>
         <span id="claudeMsg" class="cs-msg"></span>
       </div>
       <div id="claudeLimits" class="cs-limits"></div>
       <div class="actions">
-        <button class="btn-ghost" data-act="claudeUsageLogin">Claude 사용량 로그인</button>
-        <button class="btn-ghost" data-act="claudeCodeLogin">Claude Code 로그인</button>
-        <button class="btn-ghost" data-act="doctor">진단</button>
+        <button class="btn-ghost" data-act="claudeUsageLogin" data-i18n="login.claudeUsageLogin">Claude 사용량 로그인</button>
+        <button class="btn-ghost" data-act="claudeCodeLogin" data-i18n="login.claudeCodeLogin">Claude Code 로그인</button>
+        <button class="btn-ghost" data-act="doctor" data-i18n="settings.diagnostics.doctor">진단</button>
       </div>
     </div>
   </div>
@@ -154,6 +174,31 @@
 
 <script>
   "use strict";
+
+  var I18N = Object.assign({}, window.__I18N__ || {});
+  function t(key, fallback) {
+    return Object.prototype.hasOwnProperty.call(I18N, key)
+      ? I18N[key]
+      : (fallback !== undefined ? fallback : key);
+  }
+  function applyI18n(root) {
+    var scope = root || document;
+    scope.querySelectorAll("[data-i18n]").forEach(function (el) {
+      var k = el.getAttribute("data-i18n");
+      if (Object.prototype.hasOwnProperty.call(I18N, k)) el.textContent = I18N[k];
+    });
+    scope.querySelectorAll("[data-i18n-title]").forEach(function (el) {
+      var k = el.getAttribute("data-i18n-title");
+      if (Object.prototype.hasOwnProperty.call(I18N, k)) {
+        el.title = I18N[k];
+        el.setAttribute("aria-label", I18N[k]);
+      }
+    });
+    scope.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+      var k = el.getAttribute("data-i18n-placeholder");
+      if (Object.prototype.hasOwnProperty.call(I18N, k)) el.placeholder = I18N[k];
+    });
+  }
 
   function post(msg) {
     try { window.chrome.webview.postMessage(msg); } catch (e) { /* host not ready */ }
@@ -173,14 +218,14 @@
   function planChip(plan) {
     var key = String(plan || "").toLowerCase();
     if (key === "pro") return '<span class="chip pro">pro</span>';
-    if (key === "education" || key === "edu") return '<span class="chip edu">education</span>';
-    var label = plan ? escapeHtml(plan) : "free";
+    if (key === "education" || key === "edu") return '<span class="chip edu">' + escapeHtml(t("usage.plan.education", "education")) + '</span>';
+    var label = plan ? escapeHtml(plan) : escapeHtml(t("usage.plan.free", "free"));
     return '<span class="chip free">' + label + '</span>';
   }
   function authChip(ok) {
     return ok
-      ? '<span class="chip auth-ok">인증됨</span>'
-      : '<span class="chip auth-no">로그인 필요</span>';
+      ? '<span class="chip auth-ok">' + escapeHtml(t("settings.profiles.authenticated", "인증됨")) + '</span>'
+      : '<span class="chip auth-no">' + escapeHtml(t("common.loginRequired", "로그인 필요")) + '</span>';
   }
 
   function renderProfiles(profiles) {
@@ -189,14 +234,14 @@
     if (!profiles || profiles.length === 0) {
       var empty = document.createElement("div");
       empty.className = "empty";
-      empty.textContent = "등록된 프로필이 없습니다. 아래에서 이름을 입력해 추가하세요.";
+      empty.textContent = t("settings.profiles.empty", "등록된 프로필이 없습니다. 아래에서 이름을 입력해 추가하세요.");
       host.appendChild(empty);
       return;
     }
     profiles.forEach(function (p) {
       var row = document.createElement("div");
       row.className = "prow" + (p.active ? " active" : "");
-      var active = p.active ? '<span class="pactive">사용 중 ✓</span>' : '';
+      var active = p.active ? '<span class="pactive">' + escapeHtml(t("settings.profiles.activeMarker", "사용 중 ✓")) + '</span>' : '';
       row.innerHTML =
         '<span class="pdot"></span>' +
         '<span class="pname">' + escapeHtml(p.name) + '</span>' +
@@ -214,7 +259,7 @@
     if (!metrics || metrics.length === 0) {
       var empty = document.createElement("div");
       empty.className = "empty";
-      empty.textContent = "표시할 지표가 없습니다.";
+      empty.textContent = t("settings.metrics.empty", "표시할 지표가 없습니다.");
       host.appendChild(empty);
       return;
     }
@@ -252,16 +297,26 @@
     var limits = document.getElementById("claudeLimits");
     var ok = !!(claude && claude.authenticated);
     chip.className = "chip " + (ok ? "auth-ok" : "auth-no");
-    chip.textContent = ok ? "연결됨" : "로그인 필요";
+    chip.textContent = ok
+      ? t("settings.diagnostics.connected", "연결됨")
+      : t("common.loginRequired", "로그인 필요");
     msg.textContent = (claude && claude.message) ? claude.message : "";
 
     var parts = [];
     if (ok && claude) {
       if (claude.fiveHourLeft != null) {
-        parts.push("5시간 " + claude.fiveHourLeft + "%" + (claude.fiveHourReset ? " · " + claude.fiveHourReset : ""));
+        parts.push(
+          t("settings.usage.fiveHour", "5시간 {0}%{1}")
+            .replace("{0}", claude.fiveHourLeft)
+            .replace("{1}", claude.fiveHourReset ? " · " + claude.fiveHourReset : "")
+        );
       }
       if (claude.weeklyLeft != null) {
-        parts.push("주간 " + claude.weeklyLeft + "%" + (claude.weeklyReset ? " · " + claude.weeklyReset : ""));
+        parts.push(
+          t("settings.usage.weekly", "주간 {0}%{1}")
+            .replace("{0}", claude.weeklyLeft)
+            .replace("{1}", claude.weeklyReset ? " · " + claude.weeklyReset : "")
+        );
       }
     }
     limits.innerHTML = parts.map(escapeHtml).join("<br>");
@@ -273,17 +328,46 @@
     el.className = "status" + (isError ? " err" : "");
   }
 
+  var lastData = null;
+
+  function setLangControl(language) {
+    if (!language) return;
+    var sel = document.getElementById("langSelect");
+    if (sel) sel.value = language;
+  }
+
+  function applyLanguage(language, strings) {
+    if (strings) {
+      Object.keys(I18N).forEach(function (k) { delete I18N[k]; });
+      Object.assign(I18N, strings);
+    }
+    if (language) document.documentElement.lang = language;
+    setLangControl(language);
+    applyI18n();
+    if (lastData) {
+      renderProfiles(lastData.profiles || []);
+      renderMetrics(lastData.metrics || []);
+      renderClaude(lastData.claude);
+    }
+  }
+
   function handle(d) {
     if (!d) return;
     if (d.type === "status") {
       setStatus(d.text, !!d.error);
       return;
     }
+    if (d.type === "i18n") {
+      applyLanguage(d.language, d.strings || {});
+      return;
+    }
     if (d.type === "data") {
+      lastData = d;
       renderProfiles(d.profiles || []);
       renderMetrics(d.metrics || []);
       renderClaude(d.claude);
       if (typeof d.status === "string") setStatus(d.status, false);
+      setLangControl(d.language);
     }
   }
 
@@ -297,6 +381,18 @@
       }
     });
   });
+
+  (function () {
+    var sel = document.getElementById("langSelect");
+    if (!sel) return;
+    sel.value = window.__LANG__ || "ko";
+    sel.addEventListener("change", function () {
+      post({ action: "setLanguage", value: sel.value });
+    });
+  })();
+
+  document.documentElement.lang = window.__LANG__ || "ko";
+  applyI18n();
 
   window.chrome.webview.addEventListener("message", function (e) { handle(e.data); });
   post({ action: "ready" });

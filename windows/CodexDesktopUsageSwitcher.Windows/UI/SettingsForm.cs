@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using CodexDesktopUsageSwitcher.Windows.Application;
 using CodexDesktopUsageSwitcher.Windows.Domain;
+using CodexDesktopUsageSwitcher.Windows.Infrastructure;
 using CodexDesktopUsageSwitcher.Windows.UI.Controls;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -38,7 +39,7 @@ internal sealed class SettingsForm : Form
     public SettingsForm(SwitcherService service)
     {
         _service = service;
-        Text = "Codex Usage Switcher 설정";
+        Text = Localizer.L("settings.windowTitle");
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Theme.Body;
         ShowInTaskbar = true;
@@ -69,6 +70,7 @@ internal sealed class SettingsForm : Form
                 _pendingPayload = null;
             }
         };
+        await core.AddScriptToExecuteOnDocumentCreatedAsync(WebLocalization.DocumentCreatedScript());
         core.NavigateToString(Html);
     }
 
@@ -88,7 +90,7 @@ internal sealed class SettingsForm : Form
         }
         catch (Exception ex)
         {
-            PostStatus($"작업 실패: {ex.Message}", isError: true);
+            PostStatus(Localizer.F("error.actionFailed", ex.Message), isError: true);
         }
     }
 
@@ -107,13 +109,14 @@ internal sealed class SettingsForm : Form
             case "claudeUsageLogin": await LaunchClaudeLoginAsync().ConfigureAwait(true); break;
             case "claudeCodeLogin": await LaunchClaudeCodeLoginAsync().ConfigureAwait(true); break;
             case "doctor": await ShowDoctorAsync().ConfigureAwait(true); break;
+            case "setLanguage": await SetLanguageAsync(message.Value).ConfigureAwait(true); break;
             default: break;
         }
     }
 
     private async Task RefreshAsync()
     {
-        PostStatus("프로필과 사용량을 불러오는 중...");
+        PostStatus(Localizer.L("settings.loadingProfilesUsage"));
         var snapshot = await _service.LoadSnapshotAsync(CancellationToken.None).ConfigureAwait(true);
         RenderSnapshot(snapshot);
     }
@@ -126,7 +129,8 @@ internal sealed class SettingsForm : Form
             Post(new
             {
                 type = "data",
-                status = $"갱신 {snapshot.RefreshedAt:HH:mm:ss}",
+                language = Localizer.LanguageCode,
+                status = Localizer.F("settings.status.refreshedAt", snapshot.RefreshedAt.ToString("HH:mm:ss")),
                 profiles = BuildProfiles(snapshot),
                 metrics = BuildMetrics(snapshot),
                 claude = BuildClaude(snapshot.ClaudeUsage),
@@ -191,7 +195,7 @@ internal sealed class SettingsForm : Form
             return string.Empty;
         }
 
-        return $"5H {Pct(usage.FiveHourLeft)} · 주 {Pct(usage.WeeklyLeft)}";
+        return Localizer.F("usage.fiveHourWeeklyShort", Pct(usage.FiveHourLeft), Pct(usage.WeeklyLeft));
     }
 
     private static string Pct(int? value)
@@ -207,7 +211,7 @@ internal sealed class SettingsForm : Form
         }
 
         var outcome = await _service.StartCodexLoginAsync(profile, CancellationToken.None).ConfigureAwait(true);
-        await ReportActionAsync(outcome, "Codex 로그인").ConfigureAwait(true);
+        await ReportActionAsync(outcome, Localizer.L("login.codex")).ConfigureAwait(true);
     }
 
     private async Task SaveCurrentProfileAsync(string? name)
@@ -219,8 +223,8 @@ internal sealed class SettingsForm : Form
 
         var answer = MessageBox.Show(
             this,
-            "현재 Codex 로그인을 이 프로필로 저장할까요?\n\n토큰 내용은 표시하지 않습니다. Codex Desktop이 실행 중이면 CLI가 거부할 수 있습니다.",
-            "현재 계정 저장",
+            Localizer.L("settings.saveCurrent.confirmBody"),
+            Localizer.L("settings.saveCurrent.title"),
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question,
             MessageBoxDefaultButton.Button2);
@@ -230,7 +234,7 @@ internal sealed class SettingsForm : Form
         }
 
         var outcome = await _service.SaveCurrentProfileAsync(profile, CancellationToken.None).ConfigureAwait(true);
-        await ReportActionAsync(outcome, "현재 계정 저장").ConfigureAwait(true);
+        await ReportActionAsync(outcome, Localizer.L("settings.saveCurrent.title")).ConfigureAwait(true);
     }
 
     private async Task ToggleMetricAsync(string? key, bool visible)
@@ -250,12 +254,12 @@ internal sealed class SettingsForm : Form
         {
             // A locked settings.json (sync clients, antivirus) must surface and re-render
             // so the page reverts to the authoritative state instead of the optimistic one.
-            PostStatus($"설정 저장 실패: {ex.Message}", isError: true);
+            PostStatus(Localizer.F("error.saveSettingsFailed", ex.Message), isError: true);
             await RefreshAsync().ConfigureAwait(true);
             return;
         }
 
-        PostStatus($"작업표시줄 표시 {(visible ? "켜짐" : "꺼짐")}");
+        PostStatus(Localizer.F("settings.taskbarDisplayToggled", visible ? Localizer.L("common.on") : Localizer.L("common.off")));
         await RefreshAsync().ConfigureAwait(true);
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -263,13 +267,13 @@ internal sealed class SettingsForm : Form
     private async Task LaunchClaudeLoginAsync()
     {
         var outcome = await _service.StartClaudeLoginAsync(CancellationToken.None).ConfigureAwait(true);
-        await ReportActionAsync(outcome, "Claude 사용량 로그인").ConfigureAwait(true);
+        await ReportActionAsync(outcome, Localizer.L("login.claudeUsage")).ConfigureAwait(true);
     }
 
     private async Task LaunchClaudeCodeLoginAsync()
     {
         var outcome = await _service.StartClaudeCodeLoginAsync(CancellationToken.None).ConfigureAwait(true);
-        await ReportActionAsync(outcome, "Claude Code 로그인").ConfigureAwait(true);
+        await ReportActionAsync(outcome, Localizer.L("login.claudeCode")).ConfigureAwait(true);
     }
 
     private async Task ShowDoctorAsync()
@@ -278,7 +282,7 @@ internal sealed class SettingsForm : Form
         MessageBox.Show(
             this,
             outcome.Message,
-            "진단",
+            Localizer.L("settings.doctor.title"),
             MessageBoxButtons.OK,
             outcome.Ok ? MessageBoxIcon.Information : MessageBoxIcon.Error);
     }
@@ -299,6 +303,17 @@ internal sealed class SettingsForm : Form
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    private async Task SetLanguageAsync(string? code)
+    {
+        Localizer.SetLanguage(Localizer.Parse(code));
+        await _service.SetLanguageAsync(Localizer.LanguageCode, CancellationToken.None).ConfigureAwait(true);
+        // Re-localize the open page without a reload: push the new string table, then re-render the
+        // snapshot so host-computed strings update too.
+        Post(new { type = "i18n", language = Localizer.LanguageCode, strings = WebLocalization.Strings() });
+        await RefreshAsync().ConfigureAwait(true);
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private bool TryGetProfileName(string? name, out string profile)
     {
         profile = (name ?? string.Empty).Trim();
@@ -307,9 +322,7 @@ internal sealed class SettingsForm : Form
             return true;
         }
 
-        PostStatus(
-            "프로필 이름은 영문/숫자로 시작하고, 영문/숫자/밑줄/대시/점만 사용할 수 있습니다.",
-            isError: true);
+        PostStatus(Localizer.L("error.invalidProfileName"), isError: true);
         return false;
     }
 
@@ -353,6 +366,7 @@ internal sealed class SettingsForm : Form
                 Action: root.TryGetProperty("action", out var a) ? a.GetString() : null,
                 Name: root.TryGetProperty("name", out var n) ? n.GetString() : null,
                 Key: root.TryGetProperty("key", out var k) ? k.GetString() : null,
+                Value: root.TryGetProperty("value", out var val) ? val.GetString() : null,
                 Visible: root.TryGetProperty("visible", out var v) && v.ValueKind == JsonValueKind.True);
         }
         catch (JsonException)
@@ -372,5 +386,5 @@ internal sealed class SettingsForm : Form
         return reader.ReadToEnd();
     }
 
-    private readonly record struct WebMessage(string? Action, string? Name, string? Key, bool Visible);
+    private readonly record struct WebMessage(string? Action, string? Name, string? Key, string? Value, bool Visible);
 }

@@ -91,6 +91,16 @@ internal sealed class SwitcherService
         return _settingsStore.SetTrayMetricVisibilityAsync(metricKey, visible, cancellationToken);
     }
 
+    public Task<string?> LoadLanguageAsync(CancellationToken cancellationToken)
+    {
+        return _settingsStore.LoadLanguageAsync(cancellationToken);
+    }
+
+    public Task SetLanguageAsync(string language, CancellationToken cancellationToken)
+    {
+        return _settingsStore.SetLanguageAsync(language, cancellationToken);
+    }
+
     public async Task<CommandOutcome> SwitchProfileAsync(string profile, CancellationToken cancellationToken)
     {
         var stop = await _client.RunAsync(

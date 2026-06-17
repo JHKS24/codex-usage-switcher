@@ -222,5 +222,8 @@ internal static partial class Localizer
         ["settings.profiles.activeMarker"] = new("In use ✓", "사용 중 ✓"),
         ["settings.metrics.empty"] = new("No metrics to show.", "표시할 지표가 없습니다."),
         ["settings.diagnostics.connected"] = new("Connected", "연결됨"),
+        ["settings.language.label"] = new("Language", "언어"),
+        ["settings.usage.fiveHour"] = new("5h {0}%{1}", "5시간 {0}%{1}"),
+        ["settings.usage.weekly"] = new("Weekly {0}%{1}", "주간 {0}%{1}"),
     };
 }

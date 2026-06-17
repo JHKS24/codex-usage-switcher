@@ -26,6 +26,7 @@ internal static class Program
             var client = NativeSwitcherClient.CreateDefault();
             var loginLauncher = NativeInteractiveLauncher.CreateDefault();
             var settingsStore = JsonSettingsStore.CreateDefault();
+            ApplySavedLanguage(settingsStore);
             var service = new SwitcherService(client, loginLauncher, settingsStore);
             using var context = new TrayApplicationContext(service);
             primaryInstance.ActivationRequested += (_, _) => context.ShowPopupFromExternalActivation();
@@ -55,4 +56,15 @@ internal static class Program
     }
 
     private static void LogError(Exception? exception) => CrashLog.Write(exception);
+
+    // Honor a previously chosen UI language before any window is built; with none saved, the
+    // Localizer keeps its system-culture default.
+    private static void ApplySavedLanguage(ISettingsStore settingsStore)
+    {
+        var saved = settingsStore.LoadLanguageAsync(CancellationToken.None).GetAwaiter().GetResult();
+        if (saved is not null)
+        {
+            Localizer.SetLanguage(Localizer.Parse(saved));
+        }
+    }
 }
