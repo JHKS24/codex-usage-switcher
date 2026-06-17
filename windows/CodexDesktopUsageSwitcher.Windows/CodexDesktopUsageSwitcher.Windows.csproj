@@ -39,5 +39,6 @@
     <EmbeddedResource Include="UI\Web\popup.html" />
     <EmbeddedResource Include="UI\Web\dashboard.html" />
     <EmbeddedResource Include="UI\Web\settings.html" />
+    <EmbeddedResource Include="..\..\pricing\model_prices.json" Link="pricing\model_prices.json" />
   </ItemGroup>
 </Project>
