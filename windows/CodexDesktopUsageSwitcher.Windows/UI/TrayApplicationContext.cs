@@ -48,7 +48,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
         // here now instead of only inside the popup (trayux-2).
         _trayMenu.Items.Add("열기", null, (_, _) => ShowPopup());
         _trayMenu.Items.Add("종료", null, (_, _) => ExitThread());
-        _notifyIcon.ContextMenuStrip = _trayMenu;
         _notifyIcon.MouseUp += OnTrayMouseUp;
         _ = _dispatcher.Handle;
 
@@ -212,11 +211,26 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void OnTrayMouseUp(object? sender, MouseEventArgs e)
     {
-        // Left toggles the popup; right-click is handled by the ContextMenuStrip.
         if (e.Button == MouseButtons.Left)
         {
             TogglePopup();
+            return;
         }
+
+        if (e.Button == MouseButtons.Right)
+        {
+            ShowTrayMenu();
+        }
+    }
+
+    // Show the tray menu growing UPWARD from the cursor so it is never clipped behind the
+    // taskbar (the OS-default downward placement left 열기/종료 partly under the bar). A
+    // foreground window is set first so the menu dismisses on an outside click — the classic
+    // notify-icon context-menu requirement.
+    private void ShowTrayMenu()
+    {
+        SetForegroundWindow(_dispatcher.Handle);
+        _trayMenu.Show(Cursor.Position, ToolStripDropDownDirection.AboveLeft);
     }
 
     private void TogglePopup()
@@ -603,7 +617,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         var notifyIcon = new NotifyIcon();
         notifyIcon.MouseUp += OnTrayMouseUp;
-        notifyIcon.ContextMenuStrip = _trayMenu;
         return notifyIcon;
     }
 
