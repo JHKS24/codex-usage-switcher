@@ -48,8 +48,8 @@ internal static class Program
     {
         LogError(exception);
         MessageBox.Show(
-            $"예상치 못한 오류가 발생했습니다. 앱은 계속 실행됩니다.\n\n{exception.Message}",
-            "Codex Usage Switcher",
+            Localizer.F("error.unexpected.body", exception.Message),
+            Localizer.L("common.appName"),
             MessageBoxButtons.OK,
             MessageBoxIcon.Error);
     }

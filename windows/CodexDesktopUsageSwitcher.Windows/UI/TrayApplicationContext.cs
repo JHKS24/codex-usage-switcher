@@ -1,5 +1,6 @@
 using CodexDesktopUsageSwitcher.Windows.Application;
 using CodexDesktopUsageSwitcher.Windows.Domain;
+using CodexDesktopUsageSwitcher.Windows.Infrastructure;
 
 namespace CodexDesktopUsageSwitcher.Windows.UI;
 
@@ -39,15 +40,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _notifyIcon = new NotifyIcon
         {
             Icon = _trayIcon,
-            Text = "Codex Usage Switcher · 불러오는 중",
+            Text = Localizer.L("tray.tooltip.loading"),
             Visible = true,
         };
         // Left-click toggles the popup; right-click shows this menu. A separate
         // DoubleClick handler fired a second, conflicting toggle that opened-then-
         // closed the popup on the common double-click habit. Quit lives
         // here now instead of only inside the popup.
-        _trayMenu.Items.Add("열기", null, (_, _) => ShowPopup());
-        _trayMenu.Items.Add("종료", null, (_, _) => ExitThread());
+        _trayMenu.Items.Add(Localizer.L("tray.menu.open"), null, (_, _) => ShowPopup());
+        _trayMenu.Items.Add(Localizer.L("tray.menu.quit"), null, (_, _) => ExitThread());
         _notifyIcon.MouseUp += OnTrayMouseUp;
         _ = _dispatcher.Handle;
 
@@ -159,7 +160,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             _lastError = ex.Message;
             if (showErrors)
             {
-                ShowError(ex.Message, "Codex Usage Switcher");
+                ShowError(ex.Message, Localizer.L("app.name"));
             }
         }
         finally
@@ -436,8 +437,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
         try
         {
             var answer = ShowOwnedMessage(
-                $"{profile} 프로필로 전환할까요?\n\nCodex Desktop과 app-server를 종료한 뒤 --apply 전환을 실행합니다.",
-                "Codex 프로필 전환",
+                Localizer.F("settings.switch.confirm.message", profile),
+                Localizer.L("settings.switch.confirm.title"),
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question,
                 MessageBoxDefaultButton.Button2);
@@ -448,14 +449,14 @@ internal sealed class TrayApplicationContext : ApplicationContext
             }
 
             _busy = true;
-            _notifyIcon.Text = TrimNotifyText($"Codex 전환 중: {profile}");
+            _notifyIcon.Text = TrimNotifyText(Localizer.F("tray.tooltip.switching", profile));
             RenderOpenWindows();
             try
             {
                 var outcome = await _service.SwitchProfileAsync(profile, CancellationToken.None).ConfigureAwait(true);
                 if (!outcome.Ok)
                 {
-                    ShowError(outcome.Message, "전환 실패");
+                    ShowError(outcome.Message, Localizer.L("settings.switch.error.title"));
                 }
             }
             finally
@@ -479,7 +480,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         var outcome = await _service.StartClaudeLoginAsync(CancellationToken.None).ConfigureAwait(true);
         ShowOwnedMessage(
             outcome.Message,
-            "Claude 사용량 로그인",
+            Localizer.L("login.claude.title"),
             MessageBoxButtons.OK,
             outcome.Ok ? MessageBoxIcon.Information : MessageBoxIcon.Error,
             MessageBoxDefaultButton.Button1);
@@ -527,6 +528,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private string CurrentProfileName()
     {
         var current = _snapshot?.Current;
+        // "unknown" is a status sentinel (used for row lookups), not display text.
         return current?.MatchedProfile ?? current?.ActiveLabel ?? "unknown";
     }
 
@@ -560,8 +562,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
         var usage = _snapshot?.UsageRows.FirstOrDefault(row => row.Profile == active);
         var key = "fallback:codex";
         var tooltip = usage is null
-            ? "Codex Usage Switcher"
-            : $"Codex {active} 5H {PercentOrDash(usage.FiveHourLeft)} W {PercentOrDash(usage.WeeklyLeft)}";
+            ? Localizer.L("app.name")
+            : Localizer.F("tray.tooltip.fallback.usage", active, PercentOrDash(usage.FiveHourLeft), PercentOrDash(usage.WeeklyLeft));
         return new TrayMetricDisplay(key, "C5", TrayIconRenderer.PercentLabel(usage?.FiveHourLeft), tooltip, usage?.FiveHourLeft);
     }
 
@@ -644,7 +646,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private static string Tooltip(TrayMetricRow metric)
     {
-        return $"{metric.DisplayName} {PercentOrDash(metric.RemainingPercent)} · {metric.Detail}";
+        return Localizer.F("tray.tooltip.metric", metric.DisplayName, PercentOrDash(metric.RemainingPercent), metric.Detail);
     }
 
     private static string TrimNotifyText(string text)
@@ -669,7 +671,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private static string PercentOrDash(int? value)
     {
-        return value is null ? "-" : $"{value}%";
+        return value is null ? Localizer.L("usage.percent.dash") : Localizer.F("usage.percent.value", value);
     }
 
     private sealed record TrayMetricDisplay(string Key, string ShortLabel, string ValueLabel, string Tooltip, int? RemainingPercent);

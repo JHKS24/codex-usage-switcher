@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CodexDesktopUsageSwitcher.Windows.Domain;
+using CodexDesktopUsageSwitcher.Windows.Infrastructure;
 using CodexDesktopUsageSwitcher.Windows.UI.Controls;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -97,6 +98,9 @@ internal sealed class WebUsagePopupForm : Form, IUsagePopup
                 _pendingPayload = null;
             }
         };
+        // Inject the localized string table before the page loads so static labels localize on the
+        // first paint.
+        await core.AddScriptToExecuteOnDocumentCreatedAsync(WebLocalization.DocumentCreatedScript());
         core.NavigateToString(Html);
     }
 
@@ -174,7 +178,7 @@ internal sealed class WebUsagePopupForm : Form, IUsagePopup
             claude = new
             {
                 connected = claude?.Authenticated == true,
-                state = claude?.Authenticated == true ? "연결됨 · OAuth" : "로그인 필요",
+                state = claude?.Authenticated == true ? Localizer.L("popup.claude.connected") : Localizer.L("common.loginRequired"),
                 fiveHour = Limit(claude?.FiveHourLeft, claude?.FiveHourReset),
                 week = Limit(claude?.WeeklyLeft, claude?.WeeklyReset),
                 message = claude?.Message,
@@ -209,38 +213,40 @@ internal sealed class WebUsagePopupForm : Form, IUsagePopup
     {
         if (busy)
         {
-            return "갱신 중";
+            return Localizer.L("popup.refresh.refreshing");
         }
 
         if (snapshot is null)
         {
-            return "불러오는 중";
+            return Localizer.L("popup.refresh.loading");
         }
 
         var age = DateTimeOffset.Now - snapshot.RefreshedAt;
         if (age < TimeSpan.FromSeconds(60))
         {
-            return "방금 갱신";
+            return Localizer.L("popup.refresh.justNow");
         }
 
-        return age < TimeSpan.FromHours(1) ? $"{(int)age.TotalMinutes}분 전 갱신" : $"{(int)age.TotalHours}시간 전 갱신";
+        return age < TimeSpan.FromHours(1)
+            ? Localizer.F("popup.refresh.minutesAgo", (int)age.TotalMinutes)
+            : Localizer.F("popup.refresh.hoursAgo", (int)age.TotalHours);
     }
 
     private static string SubText(SwitcherSnapshot? snapshot)
     {
         return snapshot is null
-            ? "10분마다 자동 갱신"
-            : $"10분마다 자동 갱신 · 마지막 {snapshot.RefreshedAt:HH:mm:ss}";
+            ? Localizer.L("popup.subtext.autoRefresh")
+            : Localizer.F("popup.subtext.autoRefreshWithTime", snapshot.RefreshedAt.ToString("HH:mm:ss"));
     }
 
     private static string QuotaText(ProfileSummary profile, UsageRow? usage)
     {
         if (!profile.HasAuth || !string.IsNullOrWhiteSpace(usage?.Error))
         {
-            return "로그인 필요";
+            return Localizer.L("common.loginRequired");
         }
 
-        return $"5H {Pct(usage?.FiveHourLeft)} · 주 {Pct(usage?.WeeklyLeft)}";
+        return Localizer.F("usage.quotaSummary", Pct(usage?.FiveHourLeft), Pct(usage?.WeeklyLeft));
     }
 
     private static string Pct(int? value)

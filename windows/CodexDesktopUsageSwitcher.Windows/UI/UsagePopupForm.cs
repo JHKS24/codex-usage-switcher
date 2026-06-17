@@ -1,4 +1,5 @@
 using CodexDesktopUsageSwitcher.Windows.Domain;
+using CodexDesktopUsageSwitcher.Windows.Infrastructure;
 using CodexDesktopUsageSwitcher.Windows.UI.Controls;
 using System.Runtime.InteropServices;
 
@@ -13,15 +14,15 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
     private readonly Label _subTitle = Label("", 8.5F, FontStyle.Regular, Theme.Secondary);
     private readonly Label _codexName = Label("", 13F, FontStyle.Bold, Theme.Primary);
     private readonly Label _codexDetail = Label("", 8.5F, FontStyle.Regular, Theme.Secondary);
-    private readonly MetricTile _codexFive = new("5H");
-    private readonly MetricTile _codexWeek = new("주간");
+    private readonly MetricTile _codexFive = new(Localizer.L("usage.fiveHour.short"));
+    private readonly MetricTile _codexWeek = new(Localizer.L("usage.weekly.short"));
     private readonly Label _claudeState = Label("", 9.5F, FontStyle.Bold, Theme.Primary);
     private readonly Label _claudeDetail = Label("", 8.5F, FontStyle.Regular, Theme.Secondary);
     private readonly Label _claudeValues = Label("", 9F, FontStyle.Bold, Theme.Warning);
-    private readonly Button _claudeLogin = LinkButton("로그인");
+    private readonly Button _claudeLogin = LinkButton(Localizer.L("common.login"));
     private readonly FlowLayoutPanel _profileRows = FlowHost();
     private readonly Panel _profileScroll = new();
-    private readonly Button _switch = PrimaryButton("프로필 전환");
+    private readonly Button _switch = PrimaryButton(Localizer.L("popup.switchProfile"));
     private readonly Label _status = Label("", 8.5F, FontStyle.Regular, Theme.Secondary);
     private readonly Dictionary<string, ProfileRow> _profileControls = new(StringComparer.OrdinalIgnoreCase);
     private string? _selectedProfile;
@@ -38,7 +39,7 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
 
     public UsagePopupForm()
     {
-        Text = "Codex Usage Switcher";
+        Text = Localizer.L("popup.windowTitle");
         AutoScaleMode = AutoScaleMode.Dpi;
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
@@ -133,12 +134,12 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
         header.Controls.Add(titleStack, 0, 0);
 
         var buttons = new FlowLayoutPanel { Width = Scale(108), FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Right, WrapContents = false };
-        var close = new GlyphButton("×", "닫기");
+        var close = new GlyphButton("×", Localizer.L("common.close"));
         close.Click += (_, _) => Hide();
         close.ContextMenuStrip = QuitMenu();
         buttons.Controls.Add(close);
-        buttons.Controls.Add(Glyph("⚙", "설정", (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty)));
-        buttons.Controls.Add(Glyph("↻", "새로고침", (_, _) => RefreshRequested?.Invoke(this, EventArgs.Empty)));
+        buttons.Controls.Add(Glyph("⚙", Localizer.L("common.settings"), (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty)));
+        buttons.Controls.Add(Glyph("↻", Localizer.L("common.refresh"), (_, _) => RefreshRequested?.Invoke(this, EventArgs.Empty)));
         header.Controls.Add(buttons, 1, 0);
         return header;
     }
@@ -150,7 +151,7 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
         card.Controls.Add(layout);
 
         var left = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Top, RowCount = 3 };
-        left.Controls.Add(Caption("CODEX"), 0, 0);
+        left.Controls.Add(Caption(Localizer.L("usage.codex.caption")), 0, 0);
         left.Controls.Add(_codexName, 0, 1);
         left.Controls.Add(_codexDetail, 0, 2);
         layout.Controls.Add(left, 0, 0);
@@ -172,7 +173,7 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
         card.Controls.Add(layout);
 
         var left = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, RowCount = 3 };
-        left.Controls.Add(Caption("CLAUDE"), 0, 0);
+        left.Controls.Add(Caption(Localizer.L("usage.claude.caption")), 0, 0);
         left.Controls.Add(_claudeState, 0, 1);
         left.Controls.Add(_claudeDetail, 0, 2);
         layout.Controls.Add(left, 0, 0);
@@ -189,7 +190,7 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
     {
         var card = Card();
         var layout = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Top, RowCount = 2 };
-        layout.Controls.Add(Caption("프로필"), 0, 0);
+        layout.Controls.Add(Caption(Localizer.L("popup.profiles.caption")), 0, 0);
         _profileScroll.AutoScroll = true;
         _profileScroll.BackColor = Theme.Card;
         _profileScroll.Controls.Add(_profileRows);
@@ -208,28 +209,28 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         _switch.Click += async (_, _) => await SwitchSelectedProfileAsync().ConfigureAwait(true);
         footer.Controls.Add(_switch, 0, 0);
-        footer.Controls.Add(LinkButton("종료", (_, _) => QuitRequested?.Invoke(this, EventArgs.Empty)), 1, 0);
+        footer.Controls.Add(LinkButton(Localizer.L("common.quit"), (_, _) => QuitRequested?.Invoke(this, EventArgs.Empty)), 1, 0);
         return footer;
     }
 
     private void RenderHeader(SwitcherSnapshot? snapshot, bool busy)
     {
-        _title.Text = _activeProfile == "unknown" ? "Codex" : $"Codex · {_activeProfile}";
-        _subTitle.Text = snapshot is null ? "사용량 불러오는 중" : busy ? "갱신 중" : $"갱신 {snapshot.RefreshedAt:HH:mm:ss}";
+        _title.Text = _activeProfile == "unknown" ? Localizer.L("popup.header.title.codex") : Localizer.F("popup.header.title.codexProfile", _activeProfile);
+        _subTitle.Text = snapshot is null ? Localizer.L("popup.header.loadingUsage") : busy ? Localizer.L("popup.header.refreshing") : Localizer.F("popup.header.refreshedAt", snapshot.RefreshedAt);
     }
 
     private void RenderStatus(bool busy, string? error)
     {
         if (busy)
         {
-            _status.Text = "갱신 중...";
+            _status.Text = Localizer.L("popup.status.refreshing");
             _status.ForeColor = Theme.Secondary;
             return;
         }
 
         // Background refresh failures used to be invisible; surface the last one here
         // instead of pretending the (stale) snapshot is fresh.
-        _status.Text = error is null ? "대기" : $"갱신 실패: {error}";
+        _status.Text = error is null ? Localizer.L("popup.status.idle") : Localizer.F("error.refreshFailed", error);
         _status.ForeColor = error is null ? Theme.Secondary : Theme.Warning;
     }
 
@@ -245,9 +246,9 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
     {
         var usage = snapshot?.ClaudeUsage;
         var authenticated = usage?.Authenticated == true;
-        _claudeState.Text = authenticated ? "연결됨 · OAuth" : "로그인 필요";
-        _claudeDetail.Text = authenticated ? usage?.Message ?? "claude-usage 남은 사용량" : usage?.Message ?? "Claude 사용량 OAuth 로그인이 필요합니다";
-        _claudeValues.Text = authenticated ? $"5H {PercentOrDash(usage?.FiveHourLeft)} · W {PercentOrDash(usage?.WeeklyLeft)}" : "";
+        _claudeState.Text = authenticated ? Localizer.L("usage.claude.connected") : Localizer.L("common.loginRequired");
+        _claudeDetail.Text = authenticated ? usage?.Message ?? Localizer.L("usage.claude.remainingFallback") : usage?.Message ?? Localizer.L("usage.claude.loginNeeded");
+        _claudeValues.Text = authenticated ? Localizer.F("usage.claude.values", PercentOrDash(usage?.FiveHourLeft), PercentOrDash(usage?.WeeklyLeft)) : "";
         _claudeLogin.Visible = !authenticated;
         _claudeLogin.Enabled = !busy;
     }
@@ -272,7 +273,7 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
 
         if (profiles.Count == 0)
         {
-            _profileRows.Controls.Add(EmptyLine("등록된 프로필이 없습니다. 설정에서 추가하세요."));
+            _profileRows.Controls.Add(EmptyLine(Localizer.L("popup.profiles.empty")));
         }
 
         // Drop a selection that no longer exists (profile deleted/renamed) so the
@@ -381,7 +382,7 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
     private ContextMenuStrip QuitMenu()
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add("앱 종료", null, (_, _) => QuitRequested?.Invoke(this, EventArgs.Empty));
+        menu.Items.Add(Localizer.L("tray.quitApp"), null, (_, _) => QuitRequested?.Invoke(this, EventArgs.Empty));
         return menu;
     }
 
@@ -458,7 +459,7 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
     {
         if (snapshot is null)
         {
-            return "프로필과 사용량 불러오는 중";
+            return Localizer.L("usage.codex.loading");
         }
 
         if (!string.IsNullOrWhiteSpace(usage?.Error))
@@ -466,25 +467,25 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
             return usage.Error;
         }
 
-        var auth = snapshot.Current.AuthMatch == "mismatch" ? "인증 불일치" : "인증 일치";
-        var running = snapshot.Current.CodexRunning is true ? "실행 중" : "실행 안 함";
+        var auth = snapshot.Current.AuthMatch == "mismatch" ? Localizer.L("usage.auth.mismatch") : Localizer.L("usage.auth.match");
+        var running = snapshot.Current.CodexRunning is true ? Localizer.L("usage.codex.running") : Localizer.L("usage.codex.notRunning");
         var weeklyReset = UsageFormatting.ResetText(usage?.WeeklyReset);
-        return string.IsNullOrEmpty(weeklyReset) ? $"{auth} · {running}" : $"{auth} · {running} · 주간 {weeklyReset}";
+        return string.IsNullOrEmpty(weeklyReset) ? Localizer.F("usage.codex.detail.authRun", auth, running) : Localizer.F("usage.codex.detail.authRunWeekly", auth, running, weeklyReset);
     }
 
     private static string ProfileState(ProfileSummary profile, string active, UsageRow? usage)
     {
         if (!string.IsNullOrWhiteSpace(usage?.Error))
         {
-            return "로그인 필요";
+            return Localizer.L("common.loginRequired");
         }
 
-        return profile.Name == active ? "사용 중" : "";
+        return profile.Name == active ? Localizer.L("usage.profile.inUse") : "";
     }
 
     private static string QuotaText(UsageRow? usage)
     {
-        return string.IsNullOrWhiteSpace(usage?.Error) ? $"5H {PercentOrDash(usage?.FiveHourLeft)} · W {PercentOrDash(usage?.WeeklyLeft)}" : "로그인 필요";
+        return string.IsNullOrWhiteSpace(usage?.Error) ? Localizer.F("usage.quota.values", PercentOrDash(usage?.FiveHourLeft), PercentOrDash(usage?.WeeklyLeft)) : Localizer.L("common.loginRequired");
     }
 
     private static Color MetricColor(int? value)
@@ -500,6 +501,6 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
 
     private static string PercentOrDash(int? value)
     {
-        return value is null ? "-" : $"{value}%";
+        return value is null ? Localizer.L("usage.percent.dash") : Localizer.F("usage.percent.value", value);
     }
 }

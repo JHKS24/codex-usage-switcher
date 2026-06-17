@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Windows.Forms;
+using CodexDesktopUsageSwitcher.Windows.Infrastructure;
 
 namespace CodexDesktopUsageSwitcher.Windows.UI;
 
@@ -24,8 +25,8 @@ internal static class CodeInputDialog
 
         var label = new Label { Text = message, Left = 14, Top = 14, Width = 442, Height = 70 };
         var input = new TextBox { Left = 14, Top = 90, Width = 442 };
-        var ok = new Button { Text = "확인", DialogResult = DialogResult.OK, Left = 296, Top = 130, Width = 74 };
-        var cancel = new Button { Text = "취소", DialogResult = DialogResult.Cancel, Left = 382, Top = 130, Width = 74 };
+        var ok = new Button { Text = Localizer.L("common.ok"), DialogResult = DialogResult.OK, Left = 296, Top = 130, Width = 74 };
+        var cancel = new Button { Text = Localizer.L("common.cancel"), DialogResult = DialogResult.Cancel, Left = 382, Top = 130, Width = 74 };
 
         form.Controls.Add(label);
         form.Controls.Add(input);

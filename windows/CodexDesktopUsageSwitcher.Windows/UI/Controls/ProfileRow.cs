@@ -1,6 +1,7 @@
 namespace CodexDesktopUsageSwitcher.Windows.UI.Controls;
 
 using System.ComponentModel;
+using CodexDesktopUsageSwitcher.Windows.Infrastructure;
 
 internal sealed class ProfileRow : Panel
 {
@@ -71,7 +72,7 @@ internal sealed class ProfileRow : Panel
     {
         _dot.Text = active ? "●" : "";
         _check.Text = active ? "✓" : "";
-        _quota.Text = hasAuth ? quotaText : "로그인 필요";
+        _quota.Text = hasAuth ? quotaText : Localizer.L("common.loginRequired");
         _quota.ForeColor = hasAuth ? Theme.Secondary : Theme.Warning;
         if (!string.IsNullOrWhiteSpace(state) && !active)
         {

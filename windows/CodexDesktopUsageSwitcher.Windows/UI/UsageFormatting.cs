@@ -1,4 +1,5 @@
 using System.Globalization;
+using CodexDesktopUsageSwitcher.Windows.Infrastructure;
 
 namespace CodexDesktopUsageSwitcher.Windows.UI;
 
@@ -25,12 +26,12 @@ internal static class UsageFormatting
         var remaining = reset.Value - now;
         if (remaining <= TimeSpan.Zero)
         {
-            return "초기화됨";
+            return Localizer.L("usage.reset.done");
         }
 
         var resetLocal = TimeZoneInfo.ConvertTime(reset.Value, zone);
         var nowLocal = TimeZoneInfo.ConvertTime(now, zone);
-        return $"{Humanize(remaining)} 후 초기화 · {Clock(resetLocal, nowLocal)}";
+        return Localizer.F("usage.reset.in", Humanize(remaining), Clock(resetLocal, nowLocal));
     }
 
     public static DateTimeOffset? ParseReset(string? isoReset)
@@ -48,15 +49,15 @@ internal static class UsageFormatting
     {
         if (span.Days >= 1)
         {
-            return $"{span.Days}일 {span.Hours}시간";
+            return Localizer.F("usage.reset.duration.days", span.Days, span.Hours);
         }
 
         if (span.Hours >= 1)
         {
-            return $"{span.Hours}시간 {span.Minutes}분";
+            return Localizer.F("usage.reset.duration.hours", span.Hours, span.Minutes);
         }
 
-        return $"{Math.Max(1, span.Minutes)}분";
+        return Localizer.F("usage.reset.duration.minutes", Math.Max(1, span.Minutes));
     }
 
     private static string Clock(DateTimeOffset resetLocal, DateTimeOffset nowLocal)

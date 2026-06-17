@@ -38,7 +38,7 @@ internal static class InteractiveTerminal
         }
         catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException)
         {
-            return new CommandOutcome(false, -1, $"터미널 실행 실패: {ex.Message}");
+            return new CommandOutcome(false, -1, Localizer.F("error.terminalLaunchFailed", ex.Message));
         }
     }
 
@@ -68,12 +68,12 @@ internal static class InteractiveTerminal
         builder.AppendLine("$loginStatus = $LASTEXITCODE");
         builder.AppendLine("Write-Host \"\"");
         builder.AppendLine("if ($loginStatus -eq 0) {");
-        builder.AppendLine("    Write-Host \"완료되었습니다. 트레이 팝업에서 새로고침을 눌러 값을 갱신하세요.\"");
+        builder.AppendLine($"    Write-Host {PsString(Localizer.L("login.terminal.completeRefreshHint"))}");
         builder.AppendLine("} else {");
         builder.AppendLine($"    Write-Host {PsString(failureHint)}");
         builder.AppendLine("}");
         builder.AppendLine("Write-Host \"\"");
-        builder.AppendLine("Read-Host \"Enter를 누르면 창을 닫습니다\"");
+        builder.AppendLine($"Read-Host {PsString(Localizer.L("login.terminal.pressEnterToClose"))}");
         builder.AppendLine("Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue");
         builder.AppendLine("exit $loginStatus");
         return builder.ToString();

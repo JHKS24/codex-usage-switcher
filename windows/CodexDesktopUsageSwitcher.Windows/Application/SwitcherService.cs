@@ -11,12 +11,12 @@ internal sealed class SwitcherService
     private static readonly TimeSpan SwitchTimeout = TimeSpan.FromSeconds(45);
     private static readonly TrayMetricDefinition[] TrayMetricDefinitions =
     [
-        new("codex:5h", "codex", "Codex 5시간", "C5", Weekly: false),
-        new("codex:week", "codex", "Codex 주간", "CW", Weekly: true),
-        new("codexsub:5h", "codexsub", "CodexSub 5시간", "S5", Weekly: false),
-        new("codexsub:week", "codexsub", "CodexSub 주간", "SW", Weekly: true),
-        new("claude:5h", "claude", "Claude 5시간", "L5", Weekly: false),
-        new("claude:week", "claude", "Claude 주간", "LW", Weekly: true),
+        new("codex:5h", "codex", Localizer.L("tray.metric.codex5h"), "C5", Weekly: false),
+        new("codex:week", "codex", Localizer.L("tray.metric.codexWeek"), "CW", Weekly: true),
+        new("codexsub:5h", "codexsub", Localizer.L("tray.metric.codexSub5h"), "S5", Weekly: false),
+        new("codexsub:week", "codexsub", Localizer.L("tray.metric.codexSubWeek"), "SW", Weekly: true),
+        new("claude:5h", "claude", Localizer.L("tray.metric.claude5h"), "L5", Weekly: false),
+        new("claude:week", "claude", Localizer.L("tray.metric.claudeWeek"), "LW", Weekly: true),
     ];
     private readonly ISwitcherClient _client;
     private readonly IInteractiveCliLauncher _interactiveCliLauncher;
@@ -100,7 +100,7 @@ internal sealed class SwitcherService
 
         if (!stop.Ok)
         {
-            return OutcomeFromResult(stop, "Codex 종료 실패");
+            return OutcomeFromResult(stop, Localizer.L("error.codexStopFailed"));
         }
 
         var use = await _client.RunAsync(
@@ -110,16 +110,16 @@ internal sealed class SwitcherService
 
         if (!use.Ok)
         {
-            return OutcomeFromResult(use, "전환 실패");
+            return OutcomeFromResult(use, Localizer.L("error.switchFailed"));
         }
 
         var open = await _client.RunAsync(["open"], StatusTimeout, cancellationToken).ConfigureAwait(false);
         if (!open.Ok)
         {
-            return new CommandOutcome(true, use.ExitCode, $"{profile} 전환 완료, Codex 자동 실행 실패", use.Stdout, open.Stderr);
+            return new CommandOutcome(true, use.ExitCode, Localizer.F("popup.switchDoneAutoLaunchFailed", profile), use.Stdout, open.Stderr);
         }
 
-        return new CommandOutcome(true, 0, $"{profile} 전환 완료", use.Stdout, use.Stderr);
+        return new CommandOutcome(true, 0, Localizer.F("popup.switchDone", profile), use.Stdout, use.Stderr);
     }
 
     public async Task<CommandOutcome> StartClaudeLoginAsync(CancellationToken cancellationToken)
@@ -156,26 +156,26 @@ internal sealed class SwitcherService
             .ConfigureAwait(false);
         if (!result.Ok)
         {
-            return OutcomeFromResult(result, "doctor 실패");
+            return OutcomeFromResult(result, Localizer.L("error.doctorFailed"));
         }
 
         using var document = TryParseObject(result.Stdout);
         if (document is null)
         {
-            return OutcomeFromResult(result, "doctor 응답을 해석할 수 없습니다");
+            return OutcomeFromResult(result, Localizer.L("error.doctorUnparseable"));
         }
 
         var root = document.RootElement;
         var lines = new List<string>
         {
-            $"platform: {StringValue(root, "platform") ?? "unknown"}",
-            $"tool: {StringValue(root, "tool") ?? "unknown"}",
-            $"profiles_root: {StringValue(root, "profiles_root") ?? "unknown"}",
+            $"platform: {StringValue(root, "platform") ?? Localizer.L("common.unknown")}",
+            $"tool: {StringValue(root, "tool") ?? Localizer.L("common.unknown")}",
+            $"profiles_root: {StringValue(root, "profiles_root") ?? Localizer.L("common.unknown")}",
             $"profiles: {ArrayLength(root, "profiles")}",
-            $"codex_cli: {StringValue(root, "codex_cli") ?? "missing"}",
-            $"codex_app: {StringValue(root, "codex_app") ?? "missing"}",
-            $"codex_running: {BoolValue(root, "codex_running")?.ToString() ?? "unknown"}",
-            $"process_check: {StringValue(root, "process_check") ?? "unknown"}",
+            $"codex_cli: {StringValue(root, "codex_cli") ?? Localizer.L("common.missing")}",
+            $"codex_app: {StringValue(root, "codex_app") ?? Localizer.L("common.missing")}",
+            $"codex_running: {BoolValue(root, "codex_running")?.ToString() ?? Localizer.L("common.unknown")}",
+            $"process_check: {StringValue(root, "process_check") ?? Localizer.L("common.unknown")}",
         };
         return new CommandOutcome(true, 0, string.Join(Environment.NewLine, lines), result.Stdout, result.Stderr);
     }
@@ -244,6 +244,8 @@ internal sealed class SwitcherService
     private static CurrentState CurrentFromElement(JsonElement element)
     {
         return new CurrentState(
+            // active_label / auth_match are status sentinels compared in logic (e.g. != "unknown");
+            // keep them as data, not localized display text.
             StringValue(element, "active_label") ?? "unknown",
             StringValue(element, "matched_profile"),
             StringValue(element, "auth_match") ?? "unknown",
@@ -278,9 +280,9 @@ internal sealed class SwitcherService
         {
             var message = error switch
             {
-                "rate_limited" => "잠시 후 재시도",
-                "network" => "네트워크 오류 · 잠시 후 재시도",
-                _ => "로그인 필요",
+                "rate_limited" => Localizer.L("usage.claude.rateLimited"),
+                "network" => Localizer.L("usage.claude.networkError"),
+                _ => Localizer.L("common.loginRequired"),
             };
             return new ClaudeUsage(false, null, null, null, null, message);
         }
@@ -288,7 +290,7 @@ internal sealed class SwitcherService
         if (error is "network" or "usage_request_failed")
         {
             // Logged in, but the usage fetch itself failed transiently.
-            return new ClaudeUsage(true, null, null, null, null, "네트워크 오류 · 잠시 후 재시도");
+            return new ClaudeUsage(true, null, null, null, null, Localizer.L("usage.claude.networkError"));
         }
 
         var five = RemainingPercentFromUtilization(NestedDouble(element, "five_hour", "utilization"));
@@ -296,7 +298,7 @@ internal sealed class SwitcherService
         var week = RemainingPercentFromUtilization(NestedDouble(element, "seven_day", "utilization"));
         var weekReset = NestedString(element, "seven_day", "resets_at");
         var hasUsage = five is not null || week is not null;
-        return new ClaudeUsage(true, five, fiveReset, week, weekReset, hasUsage ? null : "표시값 없음");
+        return new ClaudeUsage(true, five, fiveReset, week, weekReset, hasUsage ? null : Localizer.L("usage.claude.noValues"));
     }
 
     private static CurrentState UnknownCurrent()
@@ -306,7 +308,7 @@ internal sealed class SwitcherService
 
     private static ClaudeUsage ClaudeUsageUnavailable()
     {
-        return new ClaudeUsage(false, null, null, null, null, "조회 실패");
+        return new ClaudeUsage(false, null, null, null, null, Localizer.L("usage.claude.fetchFailed"));
     }
 
     private static IReadOnlyList<TrayMetricRow> BuildTrayMetricRows(
@@ -357,11 +359,11 @@ internal sealed class SwitcherService
         return metric.ProviderId switch
         {
             "codex" when !string.IsNullOrWhiteSpace(codexUsage?.Error) => codexUsage.Error,
-            "codex" => $"프로필 {active}",
-            "codexsub" when codexSubUsage is null => "sub 프로필 없음",
+            "codex" => Localizer.F("tray.detail.codexProfile", active),
+            "codexsub" when codexSubUsage is null => Localizer.L("tray.detail.noSubProfile"),
             "codexsub" when !string.IsNullOrWhiteSpace(codexSubUsage.Error) => codexSubUsage.Error,
-            "codexsub" => $"프로필 {codexSubUsage.Profile}",
-            "claude" => claudeUsage.Authenticated ? claudeUsage.Message ?? "남은 사용량" : claudeUsage.Message ?? "로그인 필요",
+            "codexsub" => Localizer.F("tray.detail.codexSubProfile", codexSubUsage.Profile),
+            "claude" => claudeUsage.Authenticated ? claudeUsage.Message ?? Localizer.L("usage.remaining") : claudeUsage.Message ?? Localizer.L("common.loginRequired"),
             _ => "",
         };
     }
@@ -397,8 +399,8 @@ internal sealed class SwitcherService
         var active = current.MatchedProfile ?? current.ActiveLabel;
         var codexUsage = usageRows.FirstOrDefault(row => row.Profile == active);
         var codexDetail = current.AuthMatch == "mismatch"
-            ? "현재 계정이 저장 프로필과 불일치"
-            : $"현재 프로필: {active}";
+            ? Localizer.L("provider.codex.authMismatch")
+            : Localizer.F("provider.codex.currentProfile", active);
         if (!string.IsNullOrWhiteSpace(codexUsage?.Error))
         {
             codexDetail = codexUsage.Error;
@@ -408,22 +410,22 @@ internal sealed class SwitcherService
         [
             new(
                 "codex",
-                "Codex",
+                Localizer.L("provider.codex.name"),
                 AuthState: codexUsage is not null && string.IsNullOrWhiteSpace(codexUsage.Error)
                     ? ProviderAuthState.LoggedIn
                     : ProviderAuthState.Unknown,
-                CurrentText: $"5시간 {PercentOrDash(codexUsage?.FiveHourLeft)}",
-                WeeklyText: $"주간 {PercentOrDash(codexUsage?.WeeklyLeft)}",
+                CurrentText: Localizer.F("usage.fiveHour", PercentOrDash(codexUsage?.FiveHourLeft)),
+                WeeklyText: Localizer.F("usage.weekly", PercentOrDash(codexUsage?.WeeklyLeft)),
                 PlanText: codexUsage?.Plan ?? "",
                 Detail: codexDetail),
             new(
                 "claude",
-                "Claude 사용량",
+                Localizer.L("provider.claude.name"),
                 AuthState: claudeUsage.Authenticated ? ProviderAuthState.LoggedIn : ProviderAuthState.LoggedOut,
-                CurrentText: claudeUsage.Authenticated ? $"5시간 {PercentOrDash(claudeUsage.FiveHourLeft)}" : "로그인 필요",
-                WeeklyText: claudeUsage.Authenticated ? $"주간 {PercentOrDash(claudeUsage.WeeklyLeft)}" : "주간 -",
+                CurrentText: claudeUsage.Authenticated ? Localizer.F("usage.fiveHour", PercentOrDash(claudeUsage.FiveHourLeft)) : Localizer.L("common.loginRequired"),
+                WeeklyText: claudeUsage.Authenticated ? Localizer.F("usage.weekly", PercentOrDash(claudeUsage.WeeklyLeft)) : Localizer.L("usage.weeklyDash"),
                 PlanText: "OAuth",
-                Detail: claudeUsage.Message ?? "Claude 남은 사용량 OAuth"),
+                Detail: claudeUsage.Message ?? Localizer.L("provider.claude.detailDefault")),
         ];
     }
 
