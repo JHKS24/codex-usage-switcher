@@ -97,6 +97,7 @@
   .claude-status { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
   .claude-status .cs-label { font-size:12px; color:var(--txt2); }
   .claude-status .cs-msg { font-size:11px; color:var(--txt3); }
+  .cs-limits { font-size:11px; color:var(--txt2); margin:-4px 0 12px 0; line-height:1.6; }
 </style>
 </head>
 <body>
@@ -141,6 +142,7 @@
         <span id="claudeChip" class="chip auth-no">로그인 필요</span>
         <span id="claudeMsg" class="cs-msg"></span>
       </div>
+      <div id="claudeLimits" class="cs-limits"></div>
       <div class="actions">
         <button class="btn-ghost" data-act="claudeUsageLogin">Claude 사용량 로그인</button>
         <button class="btn-ghost" data-act="claudeCodeLogin">Claude Code 로그인</button>
@@ -247,10 +249,22 @@
   function renderClaude(claude) {
     var chip = document.getElementById("claudeChip");
     var msg = document.getElementById("claudeMsg");
+    var limits = document.getElementById("claudeLimits");
     var ok = !!(claude && claude.authenticated);
     chip.className = "chip " + (ok ? "auth-ok" : "auth-no");
     chip.textContent = ok ? "연결됨" : "로그인 필요";
     msg.textContent = (claude && claude.message) ? claude.message : "";
+
+    var parts = [];
+    if (ok && claude) {
+      if (claude.fiveHourLeft != null) {
+        parts.push("5시간 " + claude.fiveHourLeft + "%" + (claude.fiveHourReset ? " · " + claude.fiveHourReset : ""));
+      }
+      if (claude.weeklyLeft != null) {
+        parts.push("주간 " + claude.weeklyLeft + "%" + (claude.weeklyReset ? " · " + claude.weeklyReset : ""));
+      }
+    }
+    limits.innerHTML = parts.map(escapeHtml).join("<br>");
   }
 
   function setStatus(text, isError) {

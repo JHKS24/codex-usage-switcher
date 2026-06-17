@@ -178,6 +178,10 @@ internal sealed class SettingsForm : Form
     {
         authenticated = usage.Authenticated,
         message = usage.Message,
+        fiveHourLeft = usage.FiveHourLeft,
+        weeklyLeft = usage.WeeklyLeft,
+        fiveHourReset = UsageFormatting.ResetText(usage.FiveHourReset),
+        weeklyReset = UsageFormatting.ResetText(usage.WeeklyReset),
     };
 
     private static string UsageText(UsageRow? usage)
