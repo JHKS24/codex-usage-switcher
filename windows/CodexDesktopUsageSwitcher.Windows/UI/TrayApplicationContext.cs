@@ -47,8 +47,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
         // DoubleClick handler fired a second, conflicting toggle that opened-then-
         // closed the popup on the common double-click habit. Quit lives
         // here now instead of only inside the popup.
-        _trayMenu.Items.Add(Localizer.L("tray.menu.open"), null, (_, _) => ShowPopup());
-        _trayMenu.Items.Add(Localizer.L("tray.menu.quit"), null, (_, _) => ExitThread());
+        BuildTrayMenu();
+        Localizer.LanguageChanged += OnLanguageChanged;
         _notifyIcon.MouseUp += OnTrayMouseUp;
         _ = _dispatcher.Handle;
 
@@ -90,6 +90,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         if (disposing)
         {
+            Localizer.LanguageChanged -= OnLanguageChanged;
             _warmupCts.Cancel();
             _refreshTimer.Dispose();
             _trayMenu.Dispose();
@@ -225,7 +226,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     }
 
     // Show the tray menu growing UPWARD from the cursor so it is never clipped behind the
-    // taskbar (the OS-default downward placement left 열기/종료 partly under the bar). A
+    // taskbar (the OS-default downward placement left Open/Quit partly under the bar). A
     // foreground window is set first so the menu dismisses on an outside click — the classic
     // notify-icon context-menu requirement.
     private void ShowTrayMenu()
@@ -295,7 +296,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         window.BringToFront();
         // Borderless, no-taskbar popups don't take the foreground from a tray click on
         // their own, so a left-click left the popup behind other windows (you had to use
-        // the context-menu "열기"). Activate + SetForegroundWindow brings it to front on a
+        // the context-menu "Open"). Activate + SetForegroundWindow brings it to front on a
         // single click, and — being the active form — Deactivate now fires and hides it
         // when focus moves away instead of leaving it stuck behind.
         window.Activate();
@@ -463,7 +464,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             {
                 _busy = false;
                 // Restore the tooltip from the last snapshot; without this a failed
-                // post-switch refresh would leave "전환 중" pinned in the tray.
+                // post-switch refresh would leave the "switching" tooltip pinned in the tray.
                 UpdateTrayTitle();
             }
 
@@ -524,6 +525,16 @@ internal sealed class TrayApplicationContext : ApplicationContext
             _popupOwnedModalOpen = false;
         }
     }
+
+    private void BuildTrayMenu()
+    {
+        _trayMenu.Items.Clear();
+        _trayMenu.Items.Add(Localizer.L("tray.menu.open"), null, (_, _) => ShowPopup());
+        _trayMenu.Items.Add(Localizer.L("tray.menu.quit"), null, (_, _) => ExitThread());
+    }
+
+    // Rebuild the menu labels when the language changes; tray tooltips refresh via the snapshot.
+    private void OnLanguageChanged() => BuildTrayMenu();
 
     private string CurrentProfileName()
     {

@@ -6,7 +6,7 @@ namespace CodexDesktopUsageSwitcher.Windows.UI;
 // Date/time display for usage limits. Backend reset timestamps are ISO-8601 with an
 // offset (Codex usage rows expose five_hour_reset/weekly_reset; Claude exposes
 // five_hour.resets_at/seven_day.resets_at). This turns them into
-// "N시간 M분 후 초기화 · 로컬시각" instead of a raw timestamp. The (now, zone) overload
+// "resets in Nh Mm · local time" instead of a raw timestamp. The (now, zone) overload
 // keeps the logic testable without depending on the machine clock or time zone.
 internal static class UsageFormatting
 {

@@ -29,6 +29,7 @@ internal sealed class SettingsForm : Form
     private readonly WebView2 _web = new();
     private bool _ready;
     private string? _pendingPayload;
+    private SwitcherSnapshot? _lastSnapshot;
     // Mirrors the WinForms _renderingTrayMetrics guard: while we re-render the page from
     // a fresh snapshot, any toggle message that races in is ignored so a programmatic
     // re-render can never re-fire SetTrayMetricVisibility.
@@ -50,6 +51,33 @@ internal sealed class SettingsForm : Form
         Controls.Add(_web);
         _ = InitializeAsync();
         Shown += async (_, _) => await RefreshAsync().ConfigureAwait(true);
+        Localizer.LanguageChanged += OnLanguageChanged;
+    }
+
+    // Re-localize the open page from the cached snapshot (no re-fetch) when the language changes.
+    private void OnLanguageChanged()
+    {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        Text = Localizer.L("settings.windowTitle");
+        Post(new { type = "i18n", language = Localizer.LanguageCode, strings = WebLocalization.Strings() });
+        if (_lastSnapshot is not null)
+        {
+            RenderSnapshot(_lastSnapshot);
+        }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Localizer.LanguageChanged -= OnLanguageChanged;
+        }
+
+        base.Dispose(disposing);
     }
 
     private async Task InitializeAsync()
@@ -123,6 +151,7 @@ internal sealed class SettingsForm : Form
 
     private void RenderSnapshot(SwitcherSnapshot snapshot)
     {
+        _lastSnapshot = snapshot;
         _rendering = true;
         try
         {
@@ -305,12 +334,9 @@ internal sealed class SettingsForm : Form
 
     private async Task SetLanguageAsync(string? code)
     {
+        // SetLanguage raises LanguageChanged, which re-localizes this (and any other open) window.
         Localizer.SetLanguage(Localizer.Parse(code));
         await _service.SetLanguageAsync(Localizer.LanguageCode, CancellationToken.None).ConfigureAwait(true);
-        // Re-localize the open page without a reload: push the new string table, then re-render the
-        // snapshot so host-computed strings update too.
-        Post(new { type = "i18n", language = Localizer.LanguageCode, strings = WebLocalization.Strings() });
-        await RefreshAsync().ConfigureAwait(true);
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
 

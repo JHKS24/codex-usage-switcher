@@ -20,6 +20,9 @@ internal sealed class WebUsagePopupForm : Form, IUsagePopup
     private readonly WebView2 _web = new();
     private bool _ready;
     private string? _pendingPayload;
+    private SwitcherSnapshot? _lastSnapshot;
+    private bool _lastBusy;
+    private string? _lastError;
 
     public event EventHandler? RefreshRequested;
     public event EventHandler? SettingsRequested;
@@ -59,10 +62,14 @@ internal sealed class WebUsagePopupForm : Form, IUsagePopup
         _web.DefaultBackgroundColor = Theme.Body;
         Controls.Add(_web);
         _ = InitializeAsync();
+        Localizer.LanguageChanged += OnLanguageChanged;
     }
 
     public void Render(SwitcherSnapshot? snapshot, bool busy, string? error)
     {
+        _lastSnapshot = snapshot;
+        _lastBusy = busy;
+        _lastError = error;
         var payload = JsonSerializer.Serialize(BuildPayload(snapshot, busy, error), JsonOptions);
         if (_ready && _web.CoreWebView2 is not null)
         {
@@ -72,6 +79,30 @@ internal sealed class WebUsagePopupForm : Form, IUsagePopup
         {
             _pendingPayload = payload;
         }
+    }
+
+    // Live language switch: push the new string table (re-localizes static labels) and re-render the
+    // last snapshot so the host-computed strings update too.
+    private void OnLanguageChanged()
+    {
+        if (IsDisposed || _web.CoreWebView2 is null || !_ready)
+        {
+            return;
+        }
+
+        _web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(
+            new { type = "i18n", language = Localizer.LanguageCode, strings = WebLocalization.Strings() }, JsonOptions));
+        Render(_lastSnapshot, _lastBusy, _lastError);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Localizer.LanguageChanged -= OnLanguageChanged;
+        }
+
+        base.Dispose(disposing);
     }
 
     protected override void OnResize(EventArgs e)

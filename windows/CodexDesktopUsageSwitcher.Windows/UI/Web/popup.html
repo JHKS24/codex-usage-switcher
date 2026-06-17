@@ -68,9 +68,9 @@
       <span class="chip ok" id="freshChip"><span class="dot"></span><span id="freshText" data-i18n="popup.fresh.loading">불러오는 중</span></span>
     </div>
     <div class="icons">
-      <button class="icon" id="btnRefresh" title="새로고침" aria-label="새로고침" data-i18n-title="common.refresh">&#x21bb;</button>
-      <button class="icon" id="btnSettings" title="설정" aria-label="설정" data-i18n-title="common.settings">&#x2699;</button>
-      <button class="icon" id="btnClose" title="닫기" aria-label="닫기" data-i18n-title="common.close">&#x2715;</button>
+      <button class="icon" id="btnRefresh" data-i18n-title="common.refresh">&#x21bb;</button>
+      <button class="icon" id="btnSettings" data-i18n-title="common.settings">&#x2699;</button>
+      <button class="icon" id="btnClose" data-i18n-title="common.close">&#x2715;</button>
     </div>
   </div>
   <div class="sub" id="subText" data-i18n="popup.autoRefreshNote">10분마다 자동 갱신</div>
@@ -136,6 +136,7 @@
   }
   document.documentElement.lang = window.__LANG__ || 'ko';
   var selected = null;
+  var lastRender = null;
   function post(msg){ try{ window.chrome.webview.postMessage(msg); }catch(e){} }
   function colorOf(level){
     return level==="ok"?"var(--teal)":level==="warn"?"var(--amber)":level==="low"?"var(--coral)":"var(--txt3)";
@@ -156,6 +157,7 @@
   }
   function render(d){
     if(!d) return;
+    lastRender = d;
     document.getElementById("freshText").textContent = d.busy? t("popup.fresh.refreshing", "갱신 중") : (d.freshText||t("popup.fresh.justNow", "방금 갱신"));
     document.getElementById("subText").textContent = d.subText || t("popup.autoRefreshNote", "10분마다 자동 갱신");
     // Codex
@@ -225,7 +227,19 @@
   document.getElementById("clLogin").addEventListener("click",function(){post({action:"claudeLogin"});});
   document.getElementById("btnSwitch").addEventListener("click",function(){ if(selected) post({action:"switch", profile:selected}); });
 
-  window.chrome.webview.addEventListener("message", function(e){ render(e.data); });
+  function onMessage(msg){
+    if(!msg) return;
+    if(msg.type === "i18n"){
+      for(var k in I18N){ if(Object.prototype.hasOwnProperty.call(I18N,k)) delete I18N[k]; }
+      Object.assign(I18N, msg.strings || {});
+      document.documentElement.lang = msg.language || document.documentElement.lang;
+      applyI18n();
+      if(lastRender) render(lastRender);
+      return;
+    }
+    render(msg);
+  }
+  window.chrome.webview.addEventListener("message", function(e){ onMessage(e.data); });
   window.addEventListener("resize", reportSize);
   applyI18n();
   post({action:"ready"});

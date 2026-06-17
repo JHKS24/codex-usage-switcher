@@ -45,6 +45,19 @@ internal sealed class DashboardForm : Form
         _web.DefaultBackgroundColor = Theme.Body;
         Controls.Add(_web);
         _ = InitializeAsync();
+        Localizer.LanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged()
+    {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        Text = Localizer.L("dashboard.title");
+        Post(new { type = "i18n", language = Localizer.LanguageCode, strings = WebLocalization.Strings() });
+        Post(BuildLimits(_snapshot)); // reset text is host-computed and localized
     }
 
     protected override void OnShown(EventArgs e)
@@ -183,6 +196,7 @@ internal sealed class DashboardForm : Form
     {
         if (disposing)
         {
+            Localizer.LanguageChanged -= OnLanguageChanged;
             _refreshCts?.Cancel();
             if (_core is not null)
             {

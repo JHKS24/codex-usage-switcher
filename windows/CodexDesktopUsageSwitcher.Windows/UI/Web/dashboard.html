@@ -85,7 +85,7 @@
         <span class="tab" data-k="codex" data-i18n="dashboard.tab.codex">Codex</span>
         <span class="tab" data-k="claude" data-i18n="dashboard.tab.claude">Claude</span>
       </span>
-      <button class="btn" id="btnRefresh" title="새로고침" data-i18n-title="common.refresh">&#x21bb; <span data-i18n="common.refresh">새로고침</span></button>
+      <button class="btn" id="btnRefresh" data-i18n-title="common.refresh">&#x21bb; <span data-i18n="common.refresh">새로고침</span></button>
     </div>
   </div>
   <div id="body">
@@ -127,6 +127,7 @@
   var limitsByKey = {};        // key -> {fiveHour:{percent,reset}, week:{...}}
   var active = "codex";        // current tab
   var generatedAt = "";
+  var lastRenderMsg = null;    // last render payload (for re-render on i18n switch)
 
   function post(msg) { try { window.chrome.webview.postMessage(msg); } catch (e) {} }
 
@@ -439,11 +440,20 @@
   // ---- message protocol -----------------------------------------------------
   function handle(d) {
     if (!d || !d.type) return;
+    if (d.type === "i18n") {
+      for (var k in I18N) { if (Object.prototype.hasOwnProperty.call(I18N, k)) delete I18N[k]; }
+      Object.assign(I18N, d.strings || {});
+      document.documentElement.lang = d.language || document.documentElement.lang;
+      applyI18n();
+      if (lastRenderMsg) handle(lastRenderMsg);
+      return;
+    }
     if (d.type === "loading") {
       document.getElementById("body").innerHTML = '<div class="loading">' + escapeHtml(t("common.loading", "불러오는 중…")) + '</div>';
       return;
     }
     if (d.type === "data") {
+      lastRenderMsg = d;
       providers = d.providers || [];
       generatedAt = d.generatedAt || "";
       if (!activeProvider() && providers.length) active = providers[0].key;
@@ -451,6 +461,7 @@
       return;
     }
     if (d.type === "limits") {
+      lastRenderMsg = d;
       (d.providers || []).forEach(function (lp) { limitsByKey[lp.key] = lp; });
       render();
       return;
