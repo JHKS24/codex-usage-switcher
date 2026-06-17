@@ -33,6 +33,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4022.49" />
+    <!-- Win32_Process command lines for native Codex process detection (replaces the
+         PowerShell CIM dump the Python switcher shelled out to). -->
+    <PackageReference Include="System.Management" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
