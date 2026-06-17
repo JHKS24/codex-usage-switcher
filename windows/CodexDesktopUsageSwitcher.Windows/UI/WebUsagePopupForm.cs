@@ -51,7 +51,7 @@ internal sealed class WebUsagePopupForm : Form, IUsagePopup
 
     public WebUsagePopupForm()
     {
-        Text = "Codex Usage Switcher";
+        Text = Localizer.L("popup.windowTitle");
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         TopMost = false;

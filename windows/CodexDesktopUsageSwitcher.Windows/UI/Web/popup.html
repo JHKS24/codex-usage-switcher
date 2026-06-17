@@ -77,7 +77,7 @@
 
   <div class="card" id="codexCard">
     <div class="card-head">
-      <span class="label">CODEX</span>
+      <span class="label" data-i18n="usage.codex.caption">CODEX</span>
       <span class="name" id="codexName">—</span>
     </div>
     <div class="lim">
@@ -94,7 +94,7 @@
 
   <div class="card" id="claudeCard">
     <div class="card-head">
-      <span class="label">CLAUDE</span>
+      <span class="label" data-i18n="usage.claude.caption">CLAUDE</span>
       <span class="chip ok" id="clChip" style="display:none;"><span class="dot"></span><span id="clState">—</span></span>
       <button class="btn" id="clLogin" style="display:none;padding:4px 10px;" data-i18n="common.login">로그인</button>
     </div>
@@ -187,7 +187,7 @@
     // Resolve the selection BEFORE building rows so a refresh keeps the highlight
     // (C# posts selected=null; the JS-side selection is the source of truth).
     selected = d.selected || selected;
-    // sel-1: drop a stale selection (deleted/renamed profile) before wiring the switch
+    // Drop a stale selection (deleted/renamed profile) before wiring the switch
     // button, so it can never fire a switch to a profile that no longer exists.
     if(selected && !profs.some(function(p){ return p.name===selected; })) selected=null;
     profs.forEach(function(p){
