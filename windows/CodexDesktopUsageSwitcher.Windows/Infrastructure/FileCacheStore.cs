@@ -17,7 +17,7 @@ namespace CodexDesktopUsageSwitcher.Windows.Infrastructure;
 //  - A schema or fingerprint mismatch is a miss (the record will be overwritten on Save).
 internal sealed class FileCacheStore
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2; // bumped: cached entries now carry the token breakdown
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.General);
 

@@ -234,7 +234,9 @@ internal static class ClaudeHistoryReader
         var total = tokens.Input + tokens.Output + tokens.CacheRead + tokens.CacheCreate;
         var cost = EntryCost(model, tokens);
         var key = DedupKey(msg, obj);
-        return new CachedUsageEntry(key, ts, model, total, tokens.Output, cost, $"{file}#{turnSeq}");
+        return new CachedUsageEntry(
+            key, ts, model, total, tokens.Output, cost, $"{file}#{turnSeq}",
+            tokens.Input, tokens.CacheRead, tokens.Cache5m, tokens.Cache1h);
     }
 
     // `message.id + ":" + requestId`; empty when neither exists (never deduped),

@@ -244,7 +244,9 @@ internal static class CodexHistoryReader
         var usage = NormalizeUsage(last);
         var model = ResolveModel(state);
         var turnKey = string.IsNullOrEmpty(state.CurrentTurnId) ? null : $"{file}#{state.CurrentTurnId}";
-        return new CachedUsageEntry(DedupKey: "", ts, model, usage.Total, usage.Output, CostUsd: null, turnKey);
+        return new CachedUsageEntry(
+            DedupKey: "", ts, model, usage.Total, usage.Output, CostUsd: null, turnKey,
+            InputTokens: usage.Input, CacheReadTokens: usage.CacheRead, ReasoningOutputTokens: usage.Reasoning);
     }
 
     private static string ResolveModel(RolloutState state)
@@ -268,7 +270,9 @@ internal static class CodexHistoryReader
         return new CodexUsage(
             GetLong(raw, "input_tokens", "inputTokens"),
             GetLong(raw, "output_tokens", "outputTokens"),
-            GetLong(raw, "total_tokens", "totalTokens"));
+            GetLong(raw, "total_tokens", "totalTokens"),
+            GetLong(raw, "cached_input_tokens", "cachedInputTokens"),
+            GetLong(raw, "reasoning_output_tokens", "reasoningOutputTokens"));
     }
 
     private static long ParseTimestamp(JsonElement obj) => IsoTime.ToUnixMs(GetString(obj, "timestamp"));
@@ -330,7 +334,7 @@ internal static class CodexHistoryReader
         return false;
     }
 
-    private readonly record struct CodexUsage(long Input, long Output, long Total);
+    private readonly record struct CodexUsage(long Input, long Output, long Total, long CacheRead, long Reasoning);
 
     private sealed class RolloutState
     {

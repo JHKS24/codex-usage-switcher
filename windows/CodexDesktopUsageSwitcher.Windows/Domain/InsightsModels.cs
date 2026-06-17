@@ -14,7 +14,15 @@ internal readonly record struct InsightEntry(
     long TotalTokens,
     long OutputTokens,
     double? CostUsd,
-    string? TurnKey);
+    string? TurnKey,
+    long InputTokens = 0,
+    long CacheReadTokens = 0,
+    long Cache5mTokens = 0,
+    long Cache1hTokens = 0,
+    long ReasoningOutputTokens = 0)
+{
+    public long CacheCreationTokens => Cache5mTokens + Cache1hTokens;
+}
 
 internal sealed record DailyUsagePoint(
     long DayStartMs,
