@@ -20,6 +20,10 @@
     <PathMap>$(MSBuildThisFileDirectory)=/src/</PathMap>
     <EnableSourceLink>false</EnableSourceLink>
     <Deterministic>true</Deterministic>
+    <!-- Keep the self-contained publish to a single executable: don't drag dependency
+         XML doc files into the output. -->
+    <PublishDocumentationFile>false</PublishDocumentationFile>
+    <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
   </PropertyGroup>
 
   <ItemGroup>
