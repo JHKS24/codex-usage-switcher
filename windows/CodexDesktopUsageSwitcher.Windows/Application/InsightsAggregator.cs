@@ -9,10 +9,10 @@ namespace CodexDesktopUsageSwitcher.Windows.Application;
 // then project survivors to the keyless InsightEntry and run the calculator.
 internal static class InsightsAggregator
 {
-    public static UsageInsights Aggregate(IReadOnlyList<FileCacheRecord> records, DateTimeOffset now, TimeZoneInfo zone)
-        => InsightsCalculator.Compute(Project(records), now, zone);
+    public static UsageInsights Aggregate(IReadOnlyList<FileCacheRecord> records, DateTimeOffset now, TimeZoneInfo zone, ModelPricing? pricing = null)
+        => InsightsCalculator.Compute(Project(records, pricing), now, zone);
 
-    public static IReadOnlyList<InsightEntry> Project(IReadOnlyList<FileCacheRecord> records)
+    public static IReadOnlyList<InsightEntry> Project(IReadOnlyList<FileCacheRecord> records, ModelPricing? pricing = null)
     {
         var result = new List<InsightEntry>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -25,7 +25,10 @@ internal static class InsightsAggregator
                     continue; // duplicate streamed/resumed/forked line — first occurrence wins
                 }
 
-                result.Add(entry.ToInsight());
+                var insight = entry.ToInsight();
+                // Cost is computed from the live price table (not baked into the cache), so a
+                // price refresh updates costs without re-parsing; an unpriced model yields null.
+                result.Add(pricing is null ? insight : insight with { CostUsd = pricing.EstimateCost(insight) });
             }
         }
 

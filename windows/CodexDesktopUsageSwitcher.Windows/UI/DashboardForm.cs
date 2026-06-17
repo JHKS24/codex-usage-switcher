@@ -219,11 +219,16 @@ internal sealed class DashboardForm : Form
             generatedAt = now.ToString("HH:mm:ss"),
             providers = new[]
             {
-                new { key = "codex", title = "CODEX", cost = false, insights = codex },
-                new { key = "claude", title = "CLAUDE", cost = true, insights = claude },
+                new { key = "codex", title = "CODEX", cost = HasCost(codex), insights = codex },
+                new { key = "claude", title = "CLAUDE", cost = HasCost(claude), insights = claude },
             },
         };
     }
+
+    // Show estimated cost for a provider only when some events are actually priced; an entirely
+    // unpriced provider (no model matched the price table) keeps the cost column hidden rather
+    // than showing a misleading $0.
+    private static bool HasCost(UsageInsights insights) => insights.Daily.Any(d => d.CostUsd > 0);
 
     // The limits message carries only the live 5h/weekly remaining-% and reset text per
     // provider. A null snapshot (no refresh yet) posts nulls so the donuts show "—".

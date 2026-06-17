@@ -24,6 +24,8 @@ internal sealed class UsageHistoryService : IDisposable
     private readonly FreshnessGate _gate = new();
     private readonly SemaphoreSlim _claudeLock = new(1, 1);
     private readonly SemaphoreSlim _codexLock = new(1, 1);
+    private readonly ModelPriceStore _priceStore = new();
+    private ModelPricing _pricing;
 
     public UsageHistoryService()
         : this(ClaudeHistoryReader.ResolveConfigDir(), CodexHistoryReader.ResolveCodexHome())
@@ -41,6 +43,7 @@ internal sealed class UsageHistoryService : IDisposable
         _codexHome = codexHome;
         _claudeCache = new FileParseCache(ProviderParsers.Claude(), new FileCacheStore(Path.Combine(cacheRoot, "claude")));
         _codexCache = new FileParseCache(ProviderParsers.Codex(), new FileCacheStore(Path.Combine(cacheRoot, "codex")));
+        _pricing = new ModelPricing(_priceStore.Load());
     }
 
     // Synchronous load (tests / back-compat). Cache-backed, never throws.
@@ -61,9 +64,21 @@ internal sealed class UsageHistoryService : IDisposable
         return new ProviderInsights(await claude.ConfigureAwait(false), await codex.ConfigureAwait(false));
     }
 
-    // Warms both caches in the background (used at startup so the first open is hot).
-    public Task WarmupAsync(DateTimeOffset now, CancellationToken ct)
-        => LoadAllAsync(now, forceRefresh: false, ct);
+    // Warms both caches in the background (used at startup so the first open is hot). Also
+    // refreshes the model price table from the project's own repo so costs use the latest rates.
+    public async Task WarmupAsync(DateTimeOffset now, CancellationToken ct)
+    {
+        await RefreshPricesAsync(ct).ConfigureAwait(false);
+        await LoadAllAsync(now, forceRefresh: false, ct).ConfigureAwait(false);
+    }
+
+    // Best-effort: pull the latest reviewed price table from the project's own repo, then rebuild
+    // the in-memory pricing so later loads use fresh rates. Never throws.
+    public async Task RefreshPricesAsync(CancellationToken ct)
+    {
+        await _priceStore.RefreshAsync(ct).ConfigureAwait(false);
+        _pricing = new ModelPricing(_priceStore.Load());
+    }
 
     private UsageInsights LoadCore(HistoryProvider provider, DateTimeOffset now, bool forceRefresh, CancellationToken ct)
     {
@@ -87,7 +102,7 @@ internal sealed class UsageHistoryService : IDisposable
             }
 
             var records = cache.Refresh(files, now, new RefreshStats());
-            var insights = InsightsAggregator.Aggregate(records, now, TimeZoneInfo.Local);
+            var insights = InsightsAggregator.Aggregate(records, now, TimeZoneInfo.Local, _pricing);
             _gate.Put(provider, revision, insights);
             return insights;
         }
