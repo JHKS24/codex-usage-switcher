@@ -127,7 +127,7 @@ internal sealed class DashboardForm : Form
 
         if (action == "refresh")
         {
-            _ = RefreshAsync(force: true); // manual refresh bypasses the freshness gate (V6)
+            _ = RefreshAsync(force: true); // manual refresh bypasses the freshness gate
         }
     }
 
@@ -135,7 +135,7 @@ internal sealed class DashboardForm : Form
     // prior token. The slow load runs on a background thread (the service parallelizes the two
     // providers); the result is posted only if this is still the latest generation and the form
     // is alive, so a superseded or force-refresh-overtaken load can never paint stale data
-    // (verdict V5/V6). Posts run on the UI thread (ConfigureAwait(true)). Never early-returns.
+    // Posts run on the UI thread (ConfigureAwait(true)). Never early-returns.
     private async Task RefreshAsync(bool force = false)
     {
         var generation = ++_generation;

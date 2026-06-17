@@ -201,7 +201,7 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
     private Control Footer()
     {
         // Settings is reachable from the header gear; a second footer link was a
-        // duplicate entry point (audit layout-4/trayux-4). Quit moves to the tray
+        // duplicate entry point. Quit moves to the tray
         // context menu in a later Phase 1 batch; kept here until then.
         var footer = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Top, ColumnCount = 2, Margin = new Padding(0, 2, 0, 6) };
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -276,7 +276,7 @@ internal sealed class UsagePopupForm : Form, IUsagePopup
         }
 
         // Drop a selection that no longer exists (profile deleted/renamed) so the
-        // Switch button can't start a 45s switch to a missing profile (sel-1).
+        // Switch button can't start a 45s switch to a missing profile.
         if (_selectedProfile is not null && !_profileControls.ContainsKey(_selectedProfile))
         {
             _selectedProfile = null;

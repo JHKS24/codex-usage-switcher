@@ -4,7 +4,7 @@ using CodexDesktopUsageSwitcher.Windows.Infrastructure;
 
 namespace CodexDesktopUsageSwitcher.Windows.Application;
 
-// Counters for one Refresh, for diagnostics and tests (verdict V5 observability).
+// Counters for one Refresh, for diagnostics and tests (observability).
 internal sealed class RefreshStats
 {
     public int Reused { get; set; }        // exact fingerprint hit (in-proc or disk)
@@ -17,17 +17,17 @@ internal sealed class RefreshStats
 // One provider's incremental file cache: an in-proc map (survives within a process) over a
 // per-file disk cache (survives restarts), keyed by source path. Refresh brings the cache in
 // line with the live files and returns the in-scope records in deterministic path order so
-// the aggregator's cross-file de-dup is reproducible (verdict V3).
+// the aggregator's cross-file de-dup is reproducible.
 //
 // Per file: an exact (mtime+size) match is reused for free; a grown file is parsed as an
 // append delta from where we last stopped; a shrunk/rewritten file is fully re-parsed; a
 // never-cached file older than the mtime cutoff is tail-probed and skipped only if its newest
-// event is past the data window (verdict V1); a removed file is pruned. Refresh is serialized
-// per provider by the caller, but the map is concurrent as belt-and-suspenders (verdict V5).
+// event is past the data window; a removed file is pruned. Refresh is serialized
+// per provider by the caller, but the map is concurrent as belt-and-suspenders.
 internal sealed class FileParseCache
 {
     // The widest calculator window is the 28-day heatmap; the mtime cutoff adds a 2-day margin
-    // so sub-day mtime/clock skew can never push an in-window file past the boundary (V1).
+    // so sub-day mtime/clock skew can never push an in-window file past the boundary.
     private const int MtimeCutoffDays = 30;
     private const int EventWindowDays = 28;
 
@@ -141,7 +141,7 @@ internal sealed class FileParseCache
 
     private static bool IsBeyondWindow(FileFingerprint file, long eventCutoffMs)
     {
-        // Trust the tail's newest event, not mtime (V1). Unknown tail -> include conservatively.
+        // Trust the tail's newest event, not mtime. Unknown tail -> include conservatively.
         return TailProbe.NewestTimestampMs(file) is long ts && ts < eventCutoffMs;
     }
 

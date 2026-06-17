@@ -12,7 +12,7 @@ namespace CodexDesktopUsageSwitcher.Windows.Infrastructure;
 // ignore, exactly like the old TrimEnd('\r')). The final UNTERMINATED line (a file not ending
 // in '\n') is intentionally withheld: ParsedBytes always points just past the last consumed
 // '\n', so a resume from ParsedBytes re-reads that partial line once an append completes it —
-// no double counting (verdict V2). A leading UTF-8 BOM at offset 0 is skipped to match the
+// no double counting. A leading UTF-8 BOM at offset 0 is skipped to match the
 // old StreamReader's BOM handling.
 //
 // The memory handed back is valid only until the next TryReadLine call; callers must parse it

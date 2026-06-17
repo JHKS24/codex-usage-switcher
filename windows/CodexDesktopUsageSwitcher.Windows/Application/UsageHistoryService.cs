@@ -51,7 +51,7 @@ internal sealed class UsageHistoryService : IDisposable
         => LoadCore(provider, now, forceRefresh: false, CancellationToken.None);
 
     // Asynchronous load: all work (enumerate, hash, parse, compute) runs off the caller's
-    // thread so the UI never blocks and two providers can refresh in parallel (verdict V5/V6).
+    // thread so the UI never blocks and two providers can refresh in parallel.
     public Task<UsageInsights> LoadInsightsAsync(HistoryProvider provider, DateTimeOffset now, bool forceRefresh, CancellationToken ct)
         => Task.Run(() => LoadCore(provider, now, forceRefresh, ct), ct);
 

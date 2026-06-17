@@ -8,7 +8,7 @@ internal readonly record struct ClaudeParseState(long TurnSeq);
 
 // Codex: the FULL turn->model map must survive (not just scalars) because a token_count
 // after the resume offset can reference a turn_context defined in the already-parsed prefix
-// (verdict V2). CurrentTurnId / LatestModel are the other two pieces of live state.
+// CurrentTurnId / LatestModel are the other two pieces of live state.
 internal sealed record CodexParseState(
     string? CurrentTurnId,
     IReadOnlyDictionary<string, string> TurnModels,
@@ -20,7 +20,7 @@ internal sealed record CodexParseState(
 
 // Result of parsing a file or a delta range. ParsedBytes is the offset just past the last
 // consumed '\n'; resume the next range from exactly there. Entries are key-bearing so
-// de-duplication runs once at aggregation (verdict V3).
+// de-duplication runs once at aggregation.
 internal sealed record ClaudeParseResult(
     IReadOnlyList<CachedUsageEntry> Entries,
     long ParsedBytes,

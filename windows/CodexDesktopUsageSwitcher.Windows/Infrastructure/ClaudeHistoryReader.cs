@@ -39,7 +39,7 @@ internal static class ClaudeHistoryReader
     public static string ProjectsDir(string configDir) => Path.Combine(configDir, "projects");
 
     // Enumerates unique transcript files with fingerprints via a metadata-carrying walk
-    // (FileInfo.LastWriteTimeUtc/Length in one pass, verdict V6). Windows paths are
+    // (FileInfo.LastWriteTimeUtc/Length in one pass). Windows paths are
     // case-insensitive, so duplicate paths under overlapping roots are dropped. Missing dir
     // or a locked subtree -> empty; never throws.
     public static IReadOnlyList<FileFingerprint> EnumerateFiles(string configDir)
@@ -214,7 +214,7 @@ internal static class ClaudeHistoryReader
     }
 
     // Builds a key-bearing entry from a `message.usage` event. The dedup key is stored, not
-    // applied here — the caller de-duplicates globally at aggregation (verdict V3).
+    // applied here — the caller de-duplicates globally at aggregation.
     private static CachedUsageEntry? BuildEntry(string file, JsonElement obj, long turnSeq)
     {
         if (!obj.TryGetProperty("message", out var msg) ||
@@ -225,7 +225,7 @@ internal static class ClaudeHistoryReader
             return null;
         }
 
-        // C3: empty string is "missing" — `??` only fires on null, so "" would pass
+        // An empty string is "missing" — `??` only fires on null, so "" would pass
         // through as the model. Treat empty/null alike and fall back to "unknown".
         var rawModel = GetString(msg, "model");
         var model = string.IsNullOrEmpty(rawModel) ? "unknown" : rawModel;
@@ -321,7 +321,7 @@ internal static class ClaudeHistoryReader
             return 0;
         }
 
-        // C2: tolerate float/exponent-encoded counts (e.g. 1234.0) the same way the
+        // Tolerate float/exponent-encoded counts (e.g. 1234.0) the same way the
         // reference num() does; TryGetInt64 alone returns 0 for a JSON float.
         if (value.TryGetInt64(out var n))
         {

@@ -7,7 +7,7 @@ namespace CodexDesktopUsageSwitcher.Windows.Domain;
 // readonly record struct (not class): on the hot path this list holds ~84k entries;
 // a value type eliminates that many Gen0 allocations. Use InsightEntry? where null is
 // meaningful — never default(InsightEntry) as a sentinel (the Ts<=0 guard filters any
-// stray zero entry). Do NOT introduce LINQ materializations over the entry list (RR3).
+// stray zero entry). Do NOT introduce LINQ materializations over the entry list.
 internal readonly record struct InsightEntry(
     long Ts,
     string Model,

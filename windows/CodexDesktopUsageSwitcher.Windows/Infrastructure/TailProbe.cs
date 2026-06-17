@@ -3,7 +3,7 @@ using CodexDesktopUsageSwitcher.Windows.Domain;
 
 namespace CodexDesktopUsageSwitcher.Windows.Infrastructure;
 
-// Cutoff safety probe (verdict V1). The mtime cutoff trusts a file's mtime as a lower bound
+// Cutoff safety probe. The mtime cutoff trusts a file's mtime as a lower bound
 // on its newest event — which a copy/restore/cloud-sync/git-checkout breaks (old mtime, recent
 // content). So before skipping a never-cached old-mtime file, we read only its tail and find
 // the newest event timestamp; the caller skips only if THAT is past the data window. mtime

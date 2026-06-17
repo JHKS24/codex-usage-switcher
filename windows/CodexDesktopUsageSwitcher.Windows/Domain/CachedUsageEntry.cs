@@ -8,7 +8,7 @@ namespace CodexDesktopUsageSwitcher.Windows.Domain;
 // Never cache the keyless InsightEntry directly: the same message can recur across
 // files (resume / fork / branch), so totals would inflate without the key. An empty
 // DedupKey means the source line had no id and must never be de-duplicated (it is a
-// distinct event each time it appears). See verdict V3 in the hardened plan.
+// distinct event each time it appears).
 internal readonly record struct CachedUsageEntry(
     string DedupKey,
     long Ts,

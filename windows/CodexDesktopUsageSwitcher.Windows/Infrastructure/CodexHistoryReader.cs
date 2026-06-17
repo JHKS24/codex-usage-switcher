@@ -13,7 +13,7 @@ namespace CodexDesktopUsageSwitcher.Windows.Infrastructure;
 // CostUsd is null for Codex (cost-not-shown policy). TurnKey is `<file>#<turnId>`,
 // or null when the turn id is unknown (excluded from turn stats). Codex has no dedup,
 // so every entry carries an empty dedup key. Streams via JsonlLineReader (a real
-// rollout can exceed 500 MB); resume carries the full turn->model map (verdict V2). A final
+// rollout can exceed 500 MB); resume carries the full turn->model map. A final
 // line without a trailing '\n' (a crashed/abandoned rollout) is withheld like every unterminated
 // line and recovered on the next append — a deliberate, accepted divergence from the old
 // full-parse reader, which flushed it (verified low: real rollouts are '\n'-terminated).
@@ -34,8 +34,8 @@ internal static class CodexHistoryReader
 
     public static string SessionsDir(string codexHome) => Path.Combine(codexHome, "sessions");
 
-    // Enumerates unique rollout files with fingerprints via a metadata-carrying walk
-    // (verdict V6). Same rollout under overlapping roots is counted once
+    // Enumerates unique rollout files with fingerprints via a metadata-carrying walk.
+    // Same rollout under overlapping roots is counted once
     // (codexHistory.ts:60-72); Windows paths are case-insensitive. Missing dir -> empty.
     public static IReadOnlyList<FileFingerprint> EnumerateFiles(string codexHome)
     {
@@ -309,7 +309,7 @@ internal static class CodexHistoryReader
         return TryReadLong(obj, camel, out var m) ? m : 0;
     }
 
-    // C2: tolerate float/exponent-encoded counts (e.g. 1234.0) the same way the
+    // Tolerate float/exponent-encoded counts (e.g. 1234.0) the same way the
     // reference num() does; TryGetInt64 alone returns false for a JSON float.
     private static bool TryReadLong(JsonElement obj, string name, out long result)
     {

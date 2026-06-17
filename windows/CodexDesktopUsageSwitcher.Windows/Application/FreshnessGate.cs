@@ -2,11 +2,11 @@ using CodexDesktopUsageSwitcher.Windows.Domain;
 
 namespace CodexDesktopUsageSwitcher.Windows.Application;
 
-// The primary freshness gate (verdict V6): a revision hash over the live file fingerprints is
+// The primary freshness gate: a revision hash over the live file fingerprints is
 // the sole signal for "did anything change". A user-initiated open always enumerates and hashes
 // (cheap, metadata-only); if the revision matches the last computed insights for that provider,
 // we return them WITHOUT re-parsing. No time-based skip-TTL — that could show stale data after a
-// real change. The residual same-tick/same-size in-place rewrite miss is accepted (RR1); for
+// real change. The residual same-tick/same-size in-place rewrite miss is accepted; for
 // append-only JSONL every change moves the size and flips the hash.
 internal sealed class FreshnessGate
 {

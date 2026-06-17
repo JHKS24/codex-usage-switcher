@@ -104,7 +104,7 @@ public sealed class FileParseCacheTests : IDisposable
     {
         var now = DateTimeOffset.UtcNow;
 
-        // Restored-from-backup case: old mtime but RECENT content -> must be kept (V1).
+        // Restored-from-backup case: old mtime but RECENT content -> must be kept.
         WriteFile("recent.jsonl", Usage("r1", Iso(now.AddDays(-5)), 111, 11));
         SetOldMtime("recent.jsonl", now);
 

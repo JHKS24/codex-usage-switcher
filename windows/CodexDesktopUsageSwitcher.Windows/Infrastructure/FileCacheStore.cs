@@ -10,10 +10,10 @@ namespace CodexDesktopUsageSwitcher.Windows.Infrastructure;
 // errors are handled: every failure degrades to "no cache" so the caller re-parses — the
 // app never crashes because the cache is purely an optimization over the source JSONL.
 //
-//  - Writes are atomic (unique <hash>.<guid>.tmp then File.Move overwrite, verdict V5) so a
+//  - Writes are atomic (unique <hash>.<guid>.tmp then File.Move overwrite) so a
 //    crash or a concurrent writer can never leave a torn cache file.
 //  - A read that hits corruption deletes the bad file and misses, so the caller re-parses
-//    from source rather than taking the mtime-skip path (verdict V1).
+//    from source rather than taking the mtime-skip path.
 //  - A schema or fingerprint mismatch is a miss (the record will be overwritten on Save).
 internal sealed class FileCacheStore
 {

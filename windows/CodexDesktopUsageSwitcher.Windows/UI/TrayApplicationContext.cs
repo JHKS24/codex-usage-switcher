@@ -44,8 +44,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
         };
         // Left-click toggles the popup; right-click shows this menu. A separate
         // DoubleClick handler fired a second, conflicting toggle that opened-then-
-        // closed the popup on the common double-click habit (trayux-1). Quit lives
-        // here now instead of only inside the popup (trayux-2).
+        // closed the popup on the common double-click habit. Quit lives
+        // here now instead of only inside the popup.
         _trayMenu.Items.Add("열기", null, (_, _) => ShowPopup());
         _trayMenu.Items.Add("종료", null, (_, _) => ExitThread());
         _notifyIcon.MouseUp += OnTrayMouseUp;
@@ -136,7 +136,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         {
             // Run again once the in-flight cycle ends instead of silently dropping the
             // request (settings toggles used to vanish when they raced a refresh).
-            // Also yields to an in-progress profile switch (TRAY-2): a refresh raised
+            // Also yields to an in-progress profile switch: a refresh raised
             // during the switch's confirmation modal or apply must not interleave with
             // it on the shared busy/queue state — the switch drains this queue when done.
             _refreshQueued = true;
@@ -148,7 +148,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         try
         {
             // Inside the try so a render exception can't leave _busy stuck true,
-            // which would freeze every later refresh (trayux-3 / guardrail I1).
+            // which would freeze every later refresh (guardrail I1).
             RenderOpenWindows();
             _snapshot = await _service.LoadSnapshotAsync(CancellationToken.None).ConfigureAwait(true);
             _lastError = null;
@@ -405,7 +405,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private async Task SwitchProfileAsync(string profile)
     {
-        // TRAY-2: one re-entrancy gate guards both operations. _switching blocks a
+        // One re-entrancy gate guards both operations. _switching blocks a
         // second switch; _busy blocks a switch starting while a refresh is in flight
         // (and RefreshAsync reciprocally yields to _switching). This keeps the switch
         // and refresh from interleaving on the shared _busy/queue state.
