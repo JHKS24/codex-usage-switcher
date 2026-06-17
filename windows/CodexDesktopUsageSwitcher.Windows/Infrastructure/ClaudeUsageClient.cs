@@ -101,7 +101,7 @@ internal sealed class ClaudeUsageClient
             return (null, Classify(response));
         }
 
-        var refreshed = CredentialsFromTokenResponse(response.Body, credentials, now);
+        var refreshed = ClaudeToken.FromResponse(response.Body, credentials, now);
         if (refreshed is null)
         {
             return (null, "login_required");
@@ -109,33 +109,6 @@ internal sealed class ClaudeUsageClient
 
         _store.Save(refreshed.Value);
         return (refreshed, null);
-    }
-
-    private static ClaudeCredentials? CredentialsFromTokenResponse(string body, ClaudeCredentials fallback, DateTimeOffset now)
-    {
-        JsonElement root;
-        try
-        {
-            using var document = JsonDocument.Parse(body);
-            root = document.RootElement.Clone();
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-
-        var accessToken = Str(root, "access_token");
-        if (string.IsNullOrEmpty(accessToken))
-        {
-            return null;
-        }
-
-        long? expiresAt = Num(root, "expires_in") is { } seconds
-            ? now.ToUnixTimeSeconds() + (long)seconds
-            : fallback.ExpiresAtEpoch;
-        var scope = Str(root, "scope");
-        var scopes = string.IsNullOrWhiteSpace(scope) ? fallback.Scopes : scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return new ClaudeCredentials(accessToken, Str(root, "refresh_token") ?? fallback.RefreshToken, expiresAt, scopes);
     }
 
     private static ClaudeUsageResult ParseUsage(string body)

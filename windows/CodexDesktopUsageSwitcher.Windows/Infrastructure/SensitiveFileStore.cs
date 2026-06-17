@@ -51,8 +51,38 @@ internal sealed class SensitiveFileStore
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            RestoreFromBackup(backupId);
+            RestoreFromBackup(backupId, _paths.TargetAuth);
             return new SwitchResult(false, backupId, "switch failed: " + ex.Message);
+        }
+    }
+
+    // Save the live auth.json into a profile (the inverse of SwitchTo): back up the profile's
+    // existing auth.json, copy the current one over it atomically, and roll back on failure.
+    public SwitchResult SaveCurrent(string profile, DateTimeOffset now)
+    {
+        if (!ProfileName.IsValid(profile))
+        {
+            return new SwitchResult(false, null, "invalid profile name");
+        }
+
+        var source = _paths.TargetAuth;
+        if (!File.Exists(source))
+        {
+            return new SwitchResult(false, null, "current ~/.codex/auth.json not found");
+        }
+
+        var destination = _paths.ProfileAuth(profile);
+        string? backupId = null;
+        try
+        {
+            backupId = File.Exists(destination) ? BackupExistingFile(destination, now) : null;
+            CopyAtomic(source, destination);
+            return new SwitchResult(true, backupId, null);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            RestoreFromBackup(backupId, destination);
+            return new SwitchResult(false, backupId, "save failed: " + ex.Message);
         }
     }
 
@@ -77,17 +107,14 @@ internal sealed class SensitiveFileStore
 
     // Back up the current target auth.json into a fresh timestamped folder; returns its id, or
     // null when there is nothing to back up. Prunes to the newest BackupKeep.
-    public string? CreateBackup(DateTimeOffset now)
-    {
-        var target = _paths.TargetAuth;
-        if (!File.Exists(target))
-        {
-            return null;
-        }
+    public string? CreateBackup(DateTimeOffset now) =>
+        File.Exists(_paths.TargetAuth) ? BackupExistingFile(_paths.TargetAuth, now) : null;
 
+    private string BackupExistingFile(string sourceFile, DateTimeOffset now)
+    {
         EnsureDirs();
         var dir = ReserveBackupDir(now);
-        File.Copy(target, Path.Combine(dir, SwitcherPaths.AuthName), overwrite: true);
+        File.Copy(sourceFile, Path.Combine(dir, SwitcherPaths.AuthName), overwrite: true);
         PruneBackups(keep: dir);
         return Path.GetFileName(dir);
     }
@@ -137,11 +164,11 @@ internal sealed class SensitiveFileStore
         }
     }
 
-    private void RestoreFromBackup(string? backupId)
+    private void RestoreFromBackup(string? backupId, string destination)
     {
         if (backupId is null)
         {
-            return; // there was no prior auth.json, so nothing to restore
+            return; // there was no prior file, so nothing to restore
         }
 
         var backupAuth = Path.Combine(_paths.BackupRoot, backupId, SwitcherPaths.AuthName);
@@ -152,7 +179,7 @@ internal sealed class SensitiveFileStore
 
         try
         {
-            CopyAtomic(backupAuth, _paths.TargetAuth);
+            CopyAtomic(backupAuth, destination);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

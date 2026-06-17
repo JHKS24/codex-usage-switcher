@@ -122,6 +122,33 @@ public sealed class SensitiveFileStoreTests : IDisposable
     }
 
     [Fact]
+    public void SaveCurrent_copies_live_auth_into_profile_and_backs_up_existing()
+    {
+        SeedTarget("LIVE");
+        SeedProfile("work", "OLD-PROFILE"); // existing profile auth to be overwritten + backed up
+
+        var result = _store.SaveCurrent("work", Now);
+
+        Assert.True(result.Switched);
+        Assert.NotNull(result.BackupId);
+        Assert.Equal("LIVE", File.ReadAllText(_paths.ProfileAuth("work")));
+        var backedUp = File.ReadAllText(Path.Combine(_paths.BackupRoot, result.BackupId!, SwitcherPaths.AuthName));
+        Assert.Equal("OLD-PROFILE", backedUp);
+    }
+
+    [Fact]
+    public void SaveCurrent_rejects_invalid_name_and_missing_live_auth()
+    {
+        var badName = _store.SaveCurrent("../escape", Now);
+        Assert.False(badName.Switched);
+        Assert.Equal("invalid profile name", badName.Error);
+
+        var noLive = _store.SaveCurrent("work", Now); // no target auth.json
+        Assert.False(noLive.Switched);
+        Assert.Contains("not found", noLive.Error);
+    }
+
+    [Fact]
     public void CreateBackup_prunes_to_the_retention_limit()
     {
         for (var i = 0; i < 25; i++)
