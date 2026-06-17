@@ -207,5 +207,9 @@ public sealed class SwitcherServiceTests
 
             return Task.CompletedTask;
         }
+
+        public Task<string?> LoadLanguageAsync(CancellationToken cancellationToken) => Task.FromResult<string?>(null);
+
+        public Task SetLanguageAsync(string language, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

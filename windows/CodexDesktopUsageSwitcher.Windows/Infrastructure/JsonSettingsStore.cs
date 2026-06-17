@@ -62,13 +62,49 @@ internal sealed class JsonSettingsStore : ISettingsStore
                 metrics.Remove(metricKey);
             }
 
-            await SaveFileAsync(new SettingsFile(metrics.Order().ToArray()), cancellationToken).ConfigureAwait(false);
+            await SaveFileAsync(new SettingsFile(metrics.Order().ToArray(), settings?.Language), cancellationToken).ConfigureAwait(false);
         }
         finally
         {
             _gate.Release();
         }
     }
+
+    public async Task<string?> LoadLanguageAsync(CancellationToken cancellationToken)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var settings = await LoadFileAsync(cancellationToken).ConfigureAwait(false);
+            return NormalizeLanguage(settings?.Language);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public async Task SetLanguageAsync(string language, CancellationToken cancellationToken)
+    {
+        var normalized = NormalizeLanguage(language) ?? "en";
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var settings = await LoadFileAsync(cancellationToken).ConfigureAwait(false);
+            var metrics = (settings?.TrayMetrics ?? DefaultTrayMetrics())
+                .Where(metric => !string.IsNullOrWhiteSpace(metric))
+                .Order()
+                .ToArray();
+            await SaveFileAsync(new SettingsFile(metrics, normalized), cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private static string? NormalizeLanguage(string? language) =>
+        language?.Trim().ToLowerInvariant() switch { "ko" => "ko", "en" => "en", _ => null };
 
     private async Task<SettingsFile?> LoadFileAsync(CancellationToken cancellationToken)
     {
@@ -129,5 +165,5 @@ internal sealed class JsonSettingsStore : ISettingsStore
         return ["codex:5h", "codex:week"];
     }
 
-    private sealed record SettingsFile(IReadOnlyList<string>? TrayMetrics);
+    private sealed record SettingsFile(IReadOnlyList<string>? TrayMetrics, string? Language = null);
 }
