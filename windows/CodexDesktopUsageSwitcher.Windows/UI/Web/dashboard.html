@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg:#1B2027; --panel:#1E2731; --card:#232B35; --line:#2A3340; --line2:#2C3540;
+    --txt:#EDF1F6; --txt2:#AEB8C4; --txt3:#6E7B88; --label:#8590A0;
+    --teal:#46BAC9; --teal2:#5FD0DE; --amber:#FFB74D; --coral:#F2785C;
+    --green:#58C98F; --purple:#8B82E8; --gray:#6E7B88; --track:#2A3340;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; }
+  body {
+    background:var(--bg); color:var(--txt);
+    font-family:"Malgun Gothic","Segoe UI",sans-serif; font-size:13px;
+    -webkit-user-select:none; user-select:none;
+  }
+  #dash {
+    background:var(--bg); border:1px solid var(--line); border-radius:14px;
+    padding:18px 20px; margin:14px; color:var(--txt);
+  }
+  .hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .hdr-left { display:flex; align-items:baseline; gap:10px; }
+  .hdr-title { font-size:18px; font-weight:500; }
+  .hdr-when { font-size:11px; color:var(--txt3); }
+  .hdr-right { display:flex; align-items:center; gap:6px; }
+  .seg { display:inline-flex; background:var(--panel); border:1px solid var(--line2); border-radius:9px; padding:3px; }
+  .tab { font-size:12px; padding:5px 14px; border-radius:7px; color:#8590A0; cursor:pointer; }
+  .tab.active { background:#10333A; color:var(--teal2); }
+  .btn { display:inline-flex; align-items:center; gap:5px; background:transparent; color:#8590A0;
+         border:1px solid var(--line2); border-radius:9px; padding:6px 11px; font-size:12px; cursor:pointer; }
+  .btn:hover { background:#2B3440; color:var(--txt); }
+  .cards { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:12px; }
+  .scard { background:var(--panel); border-radius:10px; padding:12px 14px; }
+  .scard .k { font-size:11px; color:var(--label); margin-bottom:6px; }
+  .scard .v { font-size:22px; font-weight:500; }
+  .scard .v .u { font-size:14px; color:var(--txt2); }
+  .scard .v.muted { font-size:15px; font-weight:500; color:var(--txt3); margin-top:5px; }
+  .limits { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .lcard { background:var(--card); border:1px solid var(--line2); border-radius:12px;
+           padding:12px 16px; display:flex; align-items:center; gap:16px; }
+  .lcard .lk { font-size:12px; color:var(--txt2); margin-bottom:3px; }
+  .lcard .lr { font-size:11px; color:var(--txt3); }
+  .panel { background:var(--card); border:1px solid var(--line2); border-radius:12px;
+           padding:13px 16px; margin-bottom:12px; }
+  .panel:last-child { margin-bottom:0; }
+  .panel-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .panel-title { font-size:12px; color:var(--label); letter-spacing:.04em; }
+  .legend { display:flex; flex-wrap:wrap; gap:12px; font-size:11px; color:var(--txt2); }
+  .leg { display:inline-flex; align-items:center; gap:5px; }
+  .leg .sw { width:9px; height:9px; border-radius:2px; display:inline-block; }
+  .hm-legend { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--txt3); }
+  .hm-ramp { display:inline-flex; gap:3px; }
+  .hm-ramp span { width:11px; height:11px; border-radius:2px; }
+  svg { display:block; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead tr { color:var(--label); font-size:11px; text-align:right; }
+  thead th { font-weight:400; padding-bottom:8px; }
+  thead th:first-child { text-align:left; }
+  thead th.avg { width:130px; }
+  tbody td { text-align:right; color:var(--txt2); padding:9px 0; }
+  tbody tr { border-top:1px solid var(--line); }
+  tbody td:first-child { text-align:left; color:var(--txt);
+                         display:flex; align-items:center; gap:8px; }
+  .mdot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .avgcell { display:inline-flex; align-items:center; gap:8px; justify-content:flex-end; }
+  .avgbar { width:60px; height:6px; border-radius:3px; background:var(--track);
+            overflow:hidden; display:inline-block; }
+  .avgbar > i { display:block; height:100%; }
+  .loading { font-size:14px; color:var(--txt3); padding:70px 8px; text-align:center; }
+  .no-data { font-size:13px; color:var(--txt3); padding:40px 4px; text-align:center; }
+</style>
+</head>
+<body>
+<div id="dash">
+  <div class="hdr">
+    <div class="hdr-left">
+      <span class="hdr-title">사용량 대시보드</span>
+      <span class="hdr-when" id="gen"></span>
+    </div>
+    <div class="hdr-right">
+      <span class="seg" id="seg">
+        <span class="tab" data-k="codex">Codex</span>
+        <span class="tab" data-k="claude">Claude</span>
+      </span>
+      <button class="btn" id="btnRefresh" title="새로고침">&#x21bb; 새로고침</button>
+    </div>
+  </div>
+  <div id="body">
+    <div class="loading">불러오는 중&hellip;</div>
+  </div>
+</div>
+
+<script>
+  "use strict";
+
+  // Top-5 model accent palette (rank order), then gray for "기타".
+  var PALETTE = ["#46BAC9", "#FFB74D", "#F2785C", "#58C98F", "#8B82E8"];
+  var OTHER = "#6E7B88";
+  var WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
+
+  // Stored posted state.
+  var providers = [];          // [{key,title,cost,insights}]
+  var limitsByKey = {};        // key -> {fiveHour:{percent,reset}, week:{...}}
+  var active = "codex";        // current tab
+  var generatedAt = "";
+
+  function post(msg) { try { window.chrome.webview.postMessage(msg); } catch (e) {} }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c];
+    });
+  }
+
+  // ---- formatting -----------------------------------------------------------
+  function compact(n) {
+    var v = Math.round(n || 0);
+    // Use rounded-mantissa boundaries so values like 999,950 roll over to "1.0M"
+    // instead of rendering the non-conventional "1000K" (split() rounds to .1).
+    if (v >= 999500000) return split(v / 1e9, "B");
+    if (v >= 999500) return split(v / 1e6, "M");
+    if (v >= 999.5) return split(v / 1e3, "K");
+    return { num: String(v), unit: "" };
+  }
+  function split(x, unit) {
+    var s = x >= 100 ? x.toFixed(0) : x.toFixed(1);
+    return { num: s.replace(/\.0$/, ""), unit: unit };
+  }
+  function compactText(n) { var c = compact(n); return c.num + c.unit; }
+  function compactHtml(n) {
+    var c = compact(n);
+    return c.unit ? c.num + '<span class="u">' + c.unit + '</span>' : c.num;
+  }
+  // Tiered cost rounding: $250 / $12.50 / $0.042.
+  function money(v) {
+    var n = v || 0;
+    if (n >= 100) return "$" + n.toFixed(0);
+    if (n >= 1) return "$" + n.toFixed(2);
+    return "$" + n.toFixed(3);
+  }
+  function intStr(n) { return Math.round(n || 0).toLocaleString("en-US"); }
+  function dayLabel(ms) { var d = new Date(ms); return (d.getMonth() + 1) + "/" + d.getDate(); }
+
+  // ---- model ranking / colors ----------------------------------------------
+  function rankModels(daily) {
+    var totals = {};
+    daily.forEach(function (p) {
+      var by = p.byModel || {};
+      Object.keys(by).forEach(function (m) { totals[m] = (totals[m] || 0) + by[m]; });
+    });
+    var ranked = Object.keys(totals).sort(function (a, b) { return totals[b] - totals[a]; });
+    return { top: ranked.slice(0, 5), hasOther: ranked.length > 5 };
+  }
+  function colorFor(i) { return PALETTE[Math.min(i, PALETTE.length - 1)]; }
+
+  // ---- limit donut (mockup donut(); color by remaining-% threshold) ---------
+  function donutColor(pct) {
+    if (pct == null) return OTHER;
+    if (pct >= 50) return "#46BAC9";
+    if (pct >= 20) return "#FFB74D";
+    return "#F2785C";
+  }
+  function donutSvg(id, pct) {
+    var r = 27, c = 2 * Math.PI * r;
+    var color = donutColor(pct);
+    var has = pct != null;
+    var off = c * (1 - (has ? pct : 0) / 100);
+    var arc = has
+      ? '<circle cx="37" cy="37" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + c + '" stroke-dashoffset="' + off + '" transform="rotate(-90 37 37)"/>'
+      : "";
+    var label = has ? pct + "%" : "—";
+    return '<svg width="74" height="74" viewBox="0 0 74 74" id="' + id + '">' +
+      '<circle cx="37" cy="37" r="' + r + '" fill="none" stroke="#2A3340" stroke-width="7"/>' +
+      arc +
+      '<text x="37" y="42" text-anchor="middle" font-size="17" font-weight="500" fill="#EDF1F6">' + label + '</text>' +
+      '</svg>';
+  }
+  function limitCard(id, label, lim) {
+    var pct = lim ? lim.percent : null;
+    var reset = lim && lim.reset ? lim.reset : "";
+    return '<div class="lcard">' + donutSvg(id, pct) +
+      '<div><div class="lk">' + label + '</div><div class="lr">' + escapeHtml(reset) + '</div></div></div>';
+  }
+
+  // ---- trend bars (mockup geometry: rx=2, gridlines, M/D every other day) ---
+  function barsSvg(daily, ranking) {
+    var W = 620, H = 170, padL = 8, padR = 8, padT = 8, padB = 22;
+    var n = daily.length;
+    if (n === 0) return "";
+    var area = W - padL - padR, slot = area / n, bw = Math.min(26, slot * 0.62);
+    var chartH = H - padB - padT;
+    var max = 0;
+    daily.forEach(function (p) { if (p.totalTokens > max) max = p.totalTokens; });
+    if (max <= 0) max = 1;
+    var keys = ranking.top.slice();
+    var g = '<svg id="bars" width="100%" viewBox="0 0 ' + W + ' ' + H +
+      '" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">';
+    [0.25, 0.5, 0.75, 1].forEach(function (f) {
+      var y = padT + chartH * (1 - f);
+      g += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y +
+        '" stroke="#26303B" stroke-width="1" stroke-dasharray="2 4"/>';
+    });
+    daily.forEach(function (p, i) {
+      var cx = padL + slot * i + slot / 2, x = cx - bw / 2;
+      var y = padT + chartH;
+      var by = p.byModel || {};
+      var otherSum = p.totalTokens;
+      var title = dayLabel(p.dayStartMs) + " · " + compactText(p.totalTokens) + " 토큰";
+      keys.forEach(function (m, ki) {
+        var v = by[m] || 0;
+        otherSum -= v;
+        if (v <= 0) return;
+        var h = chartH * (v / max);
+        y -= h;
+        g += bar(x, y, bw, h, colorFor(ki), title);
+      });
+      if (ranking.hasOther && otherSum > 0.5) {
+        var ho = chartH * (otherSum / max);
+        y -= ho;
+        g += bar(x, y, bw, ho, OTHER, title);
+      }
+      if (i % 2 === 0) {
+        g += '<text x="' + cx.toFixed(1) + '" y="' + (H - 6) +
+          '" text-anchor="middle" font-size="10" fill="#6E7B88">' + dayLabel(p.dayStartMs) + '</text>';
+      }
+    });
+    g += '</svg>';
+    return g;
+  }
+  function bar(x, y, w, h, color, title) {
+    return '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) +
+      '" height="' + Math.max(0.5, h).toFixed(1) + '" rx="2" fill="' + color + '"><title>' +
+      escapeHtml(title) + '</title></rect>';
+  }
+  function barLegend(ranking) {
+    var items = ranking.top.map(function (m, i) {
+      return '<span class="leg"><span class="sw" style="background:' + colorFor(i) + '"></span>' + escapeHtml(m) + '</span>';
+    });
+    if (ranking.hasOther) {
+      items.push('<span class="leg"><span class="sw" style="background:' + OTHER + '"></span>기타</span>');
+    }
+    return items.join("");
+  }
+
+  // ---- heatmap (mockup cell geometry + opacity ramp) ------------------------
+  function heatSvg(heatmap) {
+    var HW = 620, lab = 26, gap = 3, cw = (HW - lab - gap * 23) / 24, ch = 16, rg = 4;
+    var H = 4 + 7 * (ch + rg) + 14;
+    var max = 0;
+    for (var r = 0; r < 7; r++) {
+      var row = heatmap[r] || [];
+      for (var c = 0; c < 24; c++) { if ((row[c] || 0) > max) max = row[c] || 0; }
+    }
+    if (max <= 0) max = 1;
+    var g = '<svg id="heat" width="100%" viewBox="0 0 ' + HW + ' ' + H +
+      '" xmlns="http://www.w3.org/2000/svg">';
+    for (var d = 0; d < 7; d++) {
+      var ry = 4 + d * (ch + rg);
+      g += '<text x="' + (lab - 8) + '" y="' + (ry + ch - 4) +
+        '" text-anchor="end" font-size="10" fill="#8590A0">' + WEEKDAYS[d] + '</text>';
+      var hrow = heatmap[d] || [];
+      for (var h = 0; h < 24; h++) {
+        var v = hrow[h] || 0;
+        var op = v <= 0 ? 0.06 : 0.14 + 0.86 * Math.sqrt(v / max);
+        var x = lab + h * (cw + gap);
+        var title = WEEKDAYS[d] + " " + h + "시 · " + compactText(v) + " 토큰";
+        g += '<rect x="' + x.toFixed(2) + '" y="' + ry + '" width="' + cw.toFixed(2) +
+          '" height="' + ch + '" rx="2" fill="rgba(70,186,201,' + op.toFixed(2) + ')"><title>' +
+          escapeHtml(title) + '</title></rect>';
+      }
+    }
+    [0, 6, 12, 18].forEach(function (h) {
+      var x = lab + h * (cw + gap) + cw / 2;
+      g += '<text x="' + x.toFixed(2) + '" y="' + (4 + 7 * (ch + rg) + 10) +
+        '" text-anchor="middle" font-size="10" fill="#6E7B88">' + h + '</text>';
+    });
+    g += '</svg>';
+    return g;
+  }
+
+  // ---- per-turn table -------------------------------------------------------
+  // Color the table rows from the UNION of the chart's daily top-5 and the table's
+  // own (7-day turn) models. Chart models keep their exact chart index/color, so a
+  // model shown in both places matches; a turn-only named row (not in the daily
+  // top-5) gets the next palette slot instead of a misleading gray OTHER dot.
+  function tableColors(rows, ranking) {
+    var map = {};
+    ranking.top.forEach(function (m, i) { map[m] = colorFor(i); });
+    var next = ranking.top.length;
+    rows.forEach(function (m) {
+      var name = m.model;
+      if (map[name] != null) return;
+      map[name] = next < PALETTE.length ? PALETTE[next++] : OTHER;
+    });
+    return map;
+  }
+  function turnRows(rows, ranking, cost) {
+    if (!rows || rows.length === 0) {
+      var span = cost ? 7 : 6;
+      return '<tr><td colspan="' + span + '" style="text-align:center;color:#6E7B88;padding:18px 0;">데이터 없음</td></tr>';
+    }
+    var colors = tableColors(rows, ranking);
+    var maxAvg = 0;
+    rows.forEach(function (m) { if (m.avgTokensPerTurn > maxAvg) maxAvg = m.avgTokensPerTurn; });
+    if (maxAvg <= 0) maxAvg = 1;
+    return rows.map(function (m) {
+      var color = colors[m.model] != null ? colors[m.model] : OTHER;
+      var pct = Math.max(0, Math.min(100, (m.avgTokensPerTurn / maxAvg) * 100));
+      var avgCell = '<span class="avgcell"><span class="avgbar"><i style="width:' + pct.toFixed(0) +
+        '%;background:' + color + ';"></i></span>' + intStr(m.avgTokensPerTurn) + '</span>';
+      var costCell = cost
+        ? '<td>' + (m.avgCostPerTurn != null ? money(m.avgCostPerTurn) : "—") + '</td>'
+        : "";
+      return '<tr><td><span class="mdot" style="background:' + color + ';"></span>' + escapeHtml(m.model) + '</td>' +
+        '<td>' + intStr(m.turns) + '</td>' +
+        '<td>' + avgCell + '</td>' +
+        '<td>' + intStr(m.medianTokensPerTurn) + '</td>' +
+        '<td>' + intStr(m.p90TokensPerTurn) + '</td>' +
+        '<td>' + intStr(m.avgOutputPerTurn) + '</td>' +
+        costCell + '</tr>';
+    }).join("");
+  }
+
+  // ---- summary cards --------------------------------------------------------
+  function summaryCards(p) {
+    var ins = p.insights || {};
+    var daily = ins.daily || [];
+    var turns = ins.modelTurns || [];
+    var sumTokens = daily.reduce(function (a, d) { return a + (d.totalTokens || 0); }, 0);
+    var totalTurns = turns.reduce(function (a, m) { return a + (m.turns || 0); }, 0);
+    var weightedAvg = turns.reduce(function (a, m) { return a + (m.avgTokensPerTurn || 0) * (m.turns || 0); }, 0);
+    var avgPerTurn = totalTurns > 0 ? Math.round(weightedAvg / totalTurns) : 0;
+    var cost4;
+    if (p.cost) {
+      var sumCost = daily.reduce(function (a, d) { return a + (d.costUsd || 0); }, 0);
+      cost4 = '<div class="v">' + money(sumCost) + '</div>';
+    } else {
+      cost4 = '<div class="v muted">Codex 비공개</div>';
+    }
+    return '<div class="cards">' +
+      '<div class="scard"><div class="k">14일 토큰</div><div class="v">' + compactHtml(sumTokens) + '</div></div>' +
+      '<div class="scard"><div class="k">턴 (7일)</div><div class="v">' + intStr(totalTurns) + '</div></div>' +
+      '<div class="scard"><div class="k">평균 / 턴</div><div class="v">' + compactHtml(avgPerTurn) + '</div></div>' +
+      '<div class="scard"><div class="k">추정 비용</div>' + cost4 + '</div>' +
+      '</div>';
+  }
+
+  // ---- render ---------------------------------------------------------------
+  function activeProvider() {
+    return providers.filter(function (p) { return p.key === active; })[0] || providers[0] || null;
+  }
+  function syncTabs() {
+    var tabs = document.querySelectorAll("#seg .tab");
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle("active", tabs[i].getAttribute("data-k") === active);
+    }
+  }
+
+  function render() {
+    document.getElementById("gen").textContent = generatedAt ? "갱신 · " + generatedAt : "";
+    syncTabs();
+    var body = document.getElementById("body");
+    var p = activeProvider();
+    if (!p) {
+      body.innerHTML = '<div class="loading">불러오는 중&hellip;</div>';
+      return;
+    }
+    var ins = p.insights || {};
+    var daily = ins.daily || [];
+    var sumTokens = daily.reduce(function (a, d) { return a + (d.totalTokens || 0); }, 0);
+    var lim = limitsByKey[p.key] || {};
+
+    var html = summaryCards(p);
+    html += '<div class="limits">' +
+      limitCard("d5", "5시간 한도", lim.fiveHour) +
+      limitCard("dw", "주간 한도", lim.week) +
+      '</div>';
+
+    if (sumTokens <= 0) {
+      body.innerHTML = html + '<div class="panel"><div class="no-data">데이터 없음</div></div>';
+      return;
+    }
+
+    var ranking = rankModels(daily);
+    html += '<div class="panel"><div class="panel-head">' +
+      '<span class="panel-title">최근 14일</span>' +
+      '<span class="legend" id="barlegend">' + barLegend(ranking) + '</span></div>' +
+      barsSvg(daily, ranking) + '</div>';
+
+    html += '<div class="panel"><div class="panel-head">' +
+      '<span class="panel-title">요일 &times; 시간</span>' +
+      '<span class="hm-legend">적음 <span class="hm-ramp">' +
+      '<span style="background:rgba(70,186,201,.18)"></span>' +
+      '<span style="background:rgba(70,186,201,.42)"></span>' +
+      '<span style="background:rgba(70,186,201,.7)"></span>' +
+      '<span style="background:rgba(70,186,201,1)"></span></span> 많음</span></div>' +
+      heatSvg(ins.heatmap || []) + '</div>';
+
+    html += '<div class="panel"><div class="panel-title" style="margin-bottom:10px;">턴당 토큰 · 최근 7일</div>' +
+      '<table><thead><tr>' +
+      '<th>모델</th><th>턴</th><th class="avg">평균</th><th>중앙값</th><th>P90</th><th>출력</th>' +
+      (p.cost ? "<th>턴당 $</th>" : "") +
+      '</tr></thead><tbody>' + turnRows(ins.modelTurns || [], ranking, p.cost) + '</tbody></table></div>';
+
+    body.innerHTML = html;
+  }
+
+  // ---- message protocol -----------------------------------------------------
+  function handle(d) {
+    if (!d || !d.type) return;
+    if (d.type === "loading") {
+      document.getElementById("body").innerHTML = '<div class="loading">불러오는 중&hellip;</div>';
+      return;
+    }
+    if (d.type === "data") {
+      providers = d.providers || [];
+      generatedAt = d.generatedAt || "";
+      if (!activeProvider() && providers.length) active = providers[0].key;
+      render();
+      return;
+    }
+    if (d.type === "limits") {
+      (d.providers || []).forEach(function (lp) { limitsByKey[lp.key] = lp; });
+      render();
+      return;
+    }
+  }
+
+  document.getElementById("btnRefresh").addEventListener("click", function () { post({ action: "refresh" }); });
+  document.getElementById("seg").addEventListener("click", function (e) {
+    var tab = e.target.closest ? e.target.closest(".tab") : null;
+    if (!tab) return;
+    var k = tab.getAttribute("data-k");
+    if (k && k !== active) { active = k; render(); }
+  });
+  window.chrome.webview.addEventListener("message", function (e) { handle(e.data); });
+  post({ action: "ready" });
+</script>
+</body>
+</html>

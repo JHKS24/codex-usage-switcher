@@ -1,0 +1,12 @@
+<Project>
+  <!-- WebView2's MSBuild targets (Common.targets, the net5.0+ <When> block) add a
+       Reference to the WPF wrapper unconditionally, even for WinForms-only apps. That
+       wrapper pulls in WPF assemblies this app does not use and trips MSB3277 under
+       -warnaserror. This app uses only the WinForms wrapper, so drop the WPF one.
+       Applies to both the app and test projects under windows\. -->
+  <Target Name="DropWebView2WpfReference" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
+</Project>

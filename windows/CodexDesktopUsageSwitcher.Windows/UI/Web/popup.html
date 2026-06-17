@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg:#1B2027; --card:#232B35; --line:#2C3540; --line2:#314150;
+    --txt:#EBF0F6; --txt2:#AEB8C4; --txt3:#69757F; --label:#7E8A99;
+    --teal:#46BAC9; --teal2:#5FD0DE; --amber:#FFB74D; --coral:#F2785C;
+    --green:#58C98F; --track:#2E3743;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; }
+  body {
+    background:var(--bg); color:var(--txt);
+    font-family:"Malgun Gothic","Segoe UI",sans-serif; font-size:13px;
+    user-select:none; -webkit-user-select:none; overflow:hidden;
+  }
+  .wrap { padding:14px; }
+  .row { display:flex; align-items:center; justify-content:space-between; }
+  .hdr-title { font-size:15px; font-weight:600; }
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:2px 8px; border-radius:999px; }
+  .chip.ok { color:#7FD8AC; background:#14271E; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--green); display:inline-block; }
+  .icons { display:flex; gap:4px; }
+  .icon { width:30px; height:28px; display:flex; align-items:center; justify-content:center;
+          color:#9BA6B4; background:transparent; border:none; border-radius:7px; cursor:pointer; font-size:15px; }
+  .icon:hover { background:#2B3440; color:var(--txt); }
+  .sub { font-size:11px; color:var(--txt3); margin:3px 0 14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 14px; margin-bottom:10px; }
+  .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .label { font-size:11px; letter-spacing:.09em; color:var(--label); }
+  .name { font-size:13px; font-weight:600; }
+  .pill { font-size:11px; padding:1px 7px; border-radius:6px; margin-left:3px; color:var(--teal2); background:#0F333A; }
+  .lim { margin-bottom:13px; }
+  .lim:last-child { margin-bottom:0; }
+  .lim-top { display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; }
+  .lim-top .k { color:var(--txt2); }
+  .lim-top .v { font-weight:600; }
+  .bar { height:8px; background:var(--track); border-radius:5px; overflow:hidden; }
+  .bar > i { display:block; height:100%; border-radius:5px; }
+  .reset { font-size:11px; color:var(--txt3); margin-top:5px; }
+  .plist { display:flex; flex-direction:column; gap:6px; }
+  .prow { display:flex; align-items:center; justify-content:space-between; padding:7px 8px; border-radius:8px; cursor:pointer; }
+  .prow:hover { background:#1E2730; }
+  .prow.active { background:#1E2730; border:1px solid var(--line2); }
+  .prow.sel { outline:1px solid var(--teal); }
+  .pname { display:flex; align-items:center; gap:8px; font-size:13px; }
+  .pdot { width:7px; height:7px; border-radius:50%; background:#3A4450; }
+  .prow.active .pdot { background:var(--teal); }
+  .pquota { font-size:11px; color:#8C97A6; display:flex; align-items:center; gap:6px; }
+  .foot { display:flex; gap:8px; align-items:center; margin-top:14px; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; border-radius:10px;
+         padding:10px; font-size:13px; cursor:pointer; border:1px solid var(--line); background:transparent; color:#9BA6B4; }
+  .btn.primary { flex:1; background:var(--teal); color:#08222A; border:none; font-weight:600; }
+  .btn:disabled { opacity:.45; cursor:default; }
+  .empty { font-size:12px; color:var(--txt3); padding:8px; }
+  .status { font-size:11px; margin-top:8px; color:var(--txt3); }
+  .status.err { color:var(--coral); }
+</style>
+</head>
+<body>
+<div class="wrap" id="root">
+  <div class="row">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="hdr-title">Codex 사용량</span>
+      <span class="chip ok" id="freshChip"><span class="dot"></span><span id="freshText">불러오는 중</span></span>
+    </div>
+    <div class="icons">
+      <button class="icon" id="btnRefresh" title="새로고침" aria-label="새로고침">&#x21bb;</button>
+      <button class="icon" id="btnSettings" title="설정" aria-label="설정">&#x2699;</button>
+      <button class="icon" id="btnClose" title="닫기" aria-label="닫기">&#x2715;</button>
+    </div>
+  </div>
+  <div class="sub" id="subText">10분마다 자동 갱신</div>
+
+  <div class="card" id="codexCard">
+    <div class="card-head">
+      <span class="label">CODEX</span>
+      <span class="name" id="codexName">—</span>
+    </div>
+    <div class="lim">
+      <div class="lim-top"><span class="k">5시간 한도</span><span class="v" id="cx5v">—</span></div>
+      <div class="bar"><i id="cx5b"></i></div>
+      <div class="reset" id="cx5r"></div>
+    </div>
+    <div class="lim">
+      <div class="lim-top"><span class="k">주간 한도</span><span class="v" id="cxwv">—</span></div>
+      <div class="bar"><i id="cxwb"></i></div>
+      <div class="reset" id="cxwr"></div>
+    </div>
+  </div>
+
+  <div class="card" id="claudeCard">
+    <div class="card-head">
+      <span class="label">CLAUDE</span>
+      <span class="chip ok" id="clChip" style="display:none;"><span class="dot"></span><span id="clState">—</span></span>
+      <button class="btn" id="clLogin" style="display:none;padding:4px 10px;">로그인</button>
+    </div>
+    <div id="clBody">
+      <div class="lim">
+        <div class="lim-top"><span class="k">5시간 한도</span><span class="v" id="cl5v">—</span></div>
+        <div class="bar"><i id="cl5b"></i></div>
+        <div class="reset" id="cl5r"></div>
+      </div>
+      <div class="lim">
+        <div class="lim-top"><span class="k">주간 한도</span><span class="v" id="clwv">—</span></div>
+        <div class="bar"><i id="clwb"></i></div>
+        <div class="reset" id="clwr"></div>
+      </div>
+    </div>
+    <div class="empty" id="clMsg" style="display:none;"></div>
+  </div>
+
+  <div class="card">
+    <div class="label" style="margin-bottom:9px;">프로필</div>
+    <div class="plist" id="plist"></div>
+  </div>
+
+  <div class="foot">
+    <button class="btn primary" id="btnSwitch" disabled>&#x21c4; 프로필 전환</button>
+    <button class="btn" id="btnDash">대시보드</button>
+    <button class="btn" id="btnQuit">종료</button>
+  </div>
+  <div class="status" id="statusLine" style="display:none;"></div>
+</div>
+
+<script>
+  "use strict";
+  var selected = null;
+  function post(msg){ try{ window.chrome.webview.postMessage(msg); }catch(e){} }
+  function colorOf(level){
+    return level==="ok"?"var(--teal)":level==="warn"?"var(--amber)":level==="low"?"var(--coral)":"var(--txt3)";
+  }
+  function levelColorText(level){
+    return level==="ok"?"var(--teal2)":level==="warn"?"var(--amber)":level==="low"?"var(--coral)":"var(--txt3)";
+  }
+  function setLimit(prefix, lim){
+    var v=document.getElementById(prefix+"v"), b=document.getElementById(prefix+"b"), r=document.getElementById(prefix+"r");
+    if(!lim || lim.percent==null){ v.textContent="—"; v.style.color="var(--txt3)"; b.style.width="0%"; r.textContent=lim&&lim.reset?lim.reset:""; return; }
+    v.textContent=lim.percent+"%"; v.style.color=levelColorText(lim.level);
+    b.style.width=Math.max(0,Math.min(100,lim.percent))+"%"; b.style.background=colorOf(lim.level);
+    r.textContent=lim.reset||"";
+  }
+  function reportSize(){
+    var h=Math.ceil(document.getElementById("root").getBoundingClientRect().height);
+    post({action:"resize", height:h});
+  }
+  function render(d){
+    if(!d) return;
+    document.getElementById("freshText").textContent = d.busy? "갱신 중" : (d.freshText||"방금 갱신");
+    document.getElementById("subText").textContent = d.subText || "10분마다 자동 갱신";
+    // Codex
+    document.getElementById("codexName").innerHTML = (d.codex&&d.codex.profile? escapeHtml(d.codex.profile):"—") +
+      (d.codex&&d.codex.active? ' <span class="pill">활성</span>':'');
+    setLimit("cx5", d.codex&&d.codex.fiveHour);
+    setLimit("cxw", d.codex&&d.codex.week);
+    // Claude
+    var cl=d.claude||{};
+    var chip=document.getElementById("clChip"), login=document.getElementById("clLogin"),
+        body=document.getElementById("clBody"), msg=document.getElementById("clMsg");
+    if(cl.connected){
+      chip.style.display=""; login.style.display="none";
+      document.getElementById("clState").textContent = cl.state||"연결됨";
+      var hasData=(cl.fiveHour&&cl.fiveHour.percent!=null)||(cl.week&&cl.week.percent!=null);
+      if(hasData){ body.style.display=""; msg.style.display="none";
+        setLimit("cl5", cl.fiveHour); setLimit("clw", cl.week);
+      } else { body.style.display="none"; msg.style.display=""; msg.textContent=cl.message||"표시값 없음"; }
+    } else {
+      chip.style.display="none"; login.style.display=""; body.style.display="none";
+      msg.style.display=""; msg.textContent=cl.message||"로그인 필요";
+    }
+    // profiles
+    var list=document.getElementById("plist"); list.innerHTML="";
+    var profs=(d.profiles||[]);
+    if(profs.length===0){ var e=document.createElement("div"); e.className="empty"; e.textContent="등록된 프로필이 없습니다. 설정에서 추가하세요."; list.appendChild(e); }
+    // Resolve the selection BEFORE building rows so a refresh keeps the highlight
+    // (C# posts selected=null; the JS-side selection is the source of truth).
+    selected = d.selected || selected;
+    // sel-1: drop a stale selection (deleted/renamed profile) before wiring the switch
+    // button, so it can never fire a switch to a profile that no longer exists.
+    if(selected && !profs.some(function(p){ return p.name===selected; })) selected=null;
+    profs.forEach(function(p){
+      var row=document.createElement("div");
+      row.setAttribute("data-name", p.name);
+      row.className="prow"+(p.active?" active":"")+(p.name===selected?" sel":"");
+      row.innerHTML='<span class="pname"><span class="pdot"></span>'+escapeHtml(p.name)+'</span>'+
+        '<span class="pquota">'+escapeHtml(p.quota||"")+(p.active?' <span style="color:var(--teal2)">&#x2713;</span>':'')+'</span>';
+      row.addEventListener("click", function(){ selected=p.name; post({action:"select", profile:p.name}); markSel(); refreshSwitch(d); });
+      row.addEventListener("dblclick", function(){ post({action:"switch", profile:p.name}); });
+      list.appendChild(row);
+    });
+    refreshSwitch(d);
+    // status
+    var st=document.getElementById("statusLine");
+    if(d.error){ st.style.display=""; st.className="status err"; st.textContent="갱신 실패: "+d.error; }
+    else { st.style.display="none"; }
+    requestAnimationFrame(reportSize);
+  }
+  function markSel(){
+    document.querySelectorAll(".prow").forEach(function(r){
+      r.classList.toggle("sel", r.getAttribute("data-name") === selected);
+    });
+  }
+  function refreshSwitch(d){
+    var btn=document.getElementById("btnSwitch");
+    var active=(d.codex&&d.codex.profile)||null;
+    btn.disabled = d.busy || !selected || selected===active;
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];}); }
+
+  document.getElementById("btnRefresh").addEventListener("click",function(){post({action:"refresh"});});
+  document.getElementById("btnSettings").addEventListener("click",function(){post({action:"settings"});});
+  document.getElementById("btnClose").addEventListener("click",function(){post({action:"close"});});
+  document.getElementById("btnQuit").addEventListener("click",function(){post({action:"quit"});});
+  document.getElementById("btnDash").addEventListener("click",function(){post({action:"dashboard"});});
+  document.getElementById("clLogin").addEventListener("click",function(){post({action:"claudeLogin"});});
+  document.getElementById("btnSwitch").addEventListener("click",function(){ if(selected) post({action:"switch", profile:selected}); });
+
+  window.chrome.webview.addEventListener("message", function(e){ render(e.data); });
+  window.addEventListener("resize", reportSize);
+  post({action:"ready"});
+  reportSize();
+</script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg:#1B2027; --card:#232B35; --line:#2C3540; --line2:#314150;
+    --txt:#EDF1F6; --txt2:#AEB8C4; --txt3:#6E7B88; --label:#8590A0;
+    --teal:#46BAC9; --teal-ink:#07212A; --track:#2E3743;
+    --plan-pro:#5FD0DE; --plan-pro-bg:#10333A;
+    --plan-edu:#C6A1FF; --plan-edu-bg:#241E3A;
+    --plan-free:#AEB8C4; --plan-free-bg:#262F3A;
+    --auth-ok:#7FD8AC; --auth-ok-bg:#14271E;
+    --auth-no:#FFC061; --auth-no-bg:#2A2212;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; }
+  body {
+    background:var(--bg); color:var(--txt);
+    font-family:"Malgun Gothic","Segoe UI",sans-serif; font-size:13px;
+    user-select:none; -webkit-user-select:none;
+  }
+  .wrap { padding:16px; }
+  .panel {
+    background:var(--bg); border:1px solid #2A3340; border-radius:14px;
+    padding:18px 20px;
+  }
+  .head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; }
+  .head h1 { font-size:18px; font-weight:500; margin:0; }
+  .head .subtitle { font-size:11px; color:var(--txt3); margin-top:2px; }
+  .status { font-size:11px; color:var(--txt3); }
+  .status.err { color:#F2785C; }
+
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+  .card:last-child { margin-bottom:0; }
+  .card-title { font-size:12px; color:var(--label); letter-spacing:.04em; margin-bottom:11px; }
+  .card-sub { font-size:11px; color:var(--txt3); margin:-7px 0 11px; }
+
+  /* profile rows */
+  .prow { display:flex; align-items:center; gap:10px; padding:7px 0; }
+  .prow + .prow { border-top:1px solid #283038; }
+  .pdot { width:8px; height:8px; border-radius:50%; background:#3A4450; flex:none; }
+  .prow.active .pdot { background:var(--teal); }
+  .pname { font-size:13px; font-weight:500; flex:none; }
+  .chip { display:inline-flex; align-items:center; font-size:11px; padding:2px 8px; border-radius:999px; white-space:nowrap; flex:none; }
+  .chip.pro { color:var(--plan-pro); background:var(--plan-pro-bg); }
+  .chip.edu { color:var(--plan-edu); background:var(--plan-edu-bg); }
+  .chip.free { color:var(--plan-free); background:var(--plan-free-bg); }
+  .chip.auth-ok { color:var(--auth-ok); background:var(--auth-ok-bg); }
+  .chip.auth-no { color:var(--auth-no); background:var(--auth-no-bg); }
+  .pusage { font-size:11px; color:#8C97A6; margin-left:auto; white-space:nowrap; }
+  .pactive { font-size:11px; color:var(--plan-pro); margin-left:12px; flex:none; white-space:nowrap; }
+  .empty { font-size:11px; color:var(--txt3); padding:6px 0; }
+
+  /* add-profile block */
+  .add { margin-top:13px; padding-top:12px; border-top:1px solid #2A3340; }
+  .add-label { font-size:11px; color:var(--label); margin-bottom:8px; display:flex; align-items:center; gap:5px; }
+  .add-row { display:flex; gap:8px; }
+  input#pname {
+    flex:1; background:#1A222B; border:1px solid var(--line2); border-radius:9px;
+    color:var(--txt); font-size:13px; padding:8px 11px; outline:none;
+    font-family:inherit;
+  }
+  input#pname::placeholder { color:var(--txt3); }
+  input#pname:focus { border-color:var(--teal); }
+  button { font-family:inherit; }
+  .btn-primary {
+    background:var(--teal); color:var(--teal-ink); border:none; border-radius:9px;
+    padding:8px 13px; font-size:12px; font-weight:500; cursor:pointer; white-space:nowrap;
+  }
+  .btn-ghost {
+    background:transparent; color:var(--txt2); border:1px solid var(--line2); border-radius:9px;
+    padding:8px 13px; font-size:12px; cursor:pointer; white-space:nowrap;
+  }
+  .btn-ghost:hover, .btn-primary:hover { filter:brightness(1.08); }
+  .hint { font-size:10px; color:var(--txt3); margin-top:6px; }
+  .folder { margin-top:11px; }
+  .folder a { font-size:11px; color:#7E8A99; cursor:pointer; }
+  .folder a:hover { color:var(--txt2); text-decoration:underline; }
+
+  /* indicators (tray metrics) */
+  .irow { display:flex; align-items:center; gap:10px; padding:8px 0; }
+  .irow + .irow { border-top:1px solid #283038; }
+  .ilabel { font-size:13px; }
+  .iremain { font-size:11px; color:#8C97A6; margin-left:auto; white-space:nowrap; }
+  .sw { width:38px; height:21px; border-radius:11px; background:var(--track); position:relative;
+        cursor:pointer; flex:none; transition:background .12s ease; }
+  .sw[data-on="1"] { background:var(--teal); }
+  .sw .knob { position:absolute; top:2.5px; left:3px; width:16px; height:16px; border-radius:50%;
+              background:#F4F8FC; transition:left .12s ease; }
+  .sw[data-on="1"] .knob { left:19px; }
+
+  /* login / diagnostics */
+  .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .actions .btn-ghost { padding:9px 14px; }
+  .claude-status { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .claude-status .cs-label { font-size:12px; color:var(--txt2); }
+  .claude-status .cs-msg { font-size:11px; color:var(--txt3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <div class="head">
+      <div>
+        <h1>설정</h1>
+        <div class="subtitle">Codex 프로필 · 작업표시줄 지표 · 로그인</div>
+      </div>
+      <span class="status" id="status">불러오는 중</span>
+    </div>
+
+    <!-- 프로필 카드 -->
+    <div class="card">
+      <div class="card-title">프로필</div>
+      <div id="profiles"></div>
+      <div class="add">
+        <div class="add-label">＋ 새 프로필 추가</div>
+        <div class="add-row">
+          <input id="pname" placeholder="프로필 이름 (work, edu…)" autocomplete="off" spellcheck="false" />
+          <button class="btn-primary" data-act="codexLogin">Codex 로그인</button>
+          <button class="btn-ghost" data-act="saveCurrent">현재 계정 저장</button>
+        </div>
+        <div class="hint">이름 입력 후 · Codex 로그인(새 계정) 또는 현재 로그인 저장</div>
+      </div>
+      <div class="folder"><a data-act="openFolder">📁 프로필 폴더 열기</a></div>
+    </div>
+
+    <!-- 작업표시줄 지표 카드 -->
+    <div class="card">
+      <div class="card-title">작업표시줄 지표</div>
+      <div class="card-sub">알림 영역에 숫자 아이콘으로 띄울 항목</div>
+      <div id="indicators"></div>
+    </div>
+
+    <!-- 로그인 · 진단 카드 -->
+    <div class="card">
+      <div class="card-title">로그인 · 진단</div>
+      <div class="claude-status">
+        <span class="cs-label">Claude 사용량</span>
+        <span id="claudeChip" class="chip auth-no">로그인 필요</span>
+        <span id="claudeMsg" class="cs-msg"></span>
+      </div>
+      <div class="actions">
+        <button class="btn-ghost" data-act="claudeUsageLogin">Claude 사용량 로그인</button>
+        <button class="btn-ghost" data-act="claudeCodeLogin">Claude Code 로그인</button>
+        <button class="btn-ghost" data-act="doctor">진단</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  "use strict";
+
+  function post(msg) {
+    try { window.chrome.webview.postMessage(msg); } catch (e) { /* host not ready */ }
+  }
+  function nameInput() {
+    return document.getElementById("pname").value.trim();
+  }
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function round(n) {
+    return (n == null || isNaN(n)) ? null : Math.round(n);
+  }
+
+  function planChip(plan) {
+    var key = String(plan || "").toLowerCase();
+    if (key === "pro") return '<span class="chip pro">pro</span>';
+    if (key === "education" || key === "edu") return '<span class="chip edu">education</span>';
+    var label = plan ? escapeHtml(plan) : "free";
+    return '<span class="chip free">' + label + '</span>';
+  }
+  function authChip(ok) {
+    return ok
+      ? '<span class="chip auth-ok">인증됨</span>'
+      : '<span class="chip auth-no">로그인 필요</span>';
+  }
+
+  function renderProfiles(profiles) {
+    var host = document.getElementById("profiles");
+    host.innerHTML = "";
+    if (!profiles || profiles.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "등록된 프로필이 없습니다. 아래에서 이름을 입력해 추가하세요.";
+      host.appendChild(empty);
+      return;
+    }
+    profiles.forEach(function (p) {
+      var row = document.createElement("div");
+      row.className = "prow" + (p.active ? " active" : "");
+      var active = p.active ? '<span class="pactive">사용 중 ✓</span>' : '';
+      row.innerHTML =
+        '<span class="pdot"></span>' +
+        '<span class="pname">' + escapeHtml(p.name) + '</span>' +
+        planChip(p.plan) +
+        authChip(!!p.auth) +
+        '<span class="pusage">' + escapeHtml(p.usage || "") + '</span>' +
+        active;
+      host.appendChild(row);
+    });
+  }
+
+  function renderMetrics(metrics) {
+    var host = document.getElementById("indicators");
+    host.innerHTML = "";
+    if (!metrics || metrics.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "표시할 지표가 없습니다.";
+      host.appendChild(empty);
+      return;
+    }
+    metrics.forEach(function (m) {
+      var row = document.createElement("div");
+      row.className = "irow";
+      var remain = (round(m.remaining) == null) ? "—" : (round(m.remaining) + "%");
+      var label = document.createElement("span");
+      label.className = "ilabel";
+      label.textContent = m.label;
+      var val = document.createElement("span");
+      val.className = "iremain";
+      val.textContent = remain;
+      var sw = document.createElement("span");
+      sw.className = "sw";
+      sw.setAttribute("data-on", m.visible ? "1" : "0");
+      sw.innerHTML = '<span class="knob"></span>';
+      sw.addEventListener("click", function () {
+        // Reflect the new state optimistically; the host re-renders with the
+        // authoritative value (and a reentrancy-guarded data message) afterward.
+        var next = sw.getAttribute("data-on") !== "1";
+        sw.setAttribute("data-on", next ? "1" : "0");
+        post({ action: "toggleMetric", key: m.key, visible: next });
+      });
+      row.appendChild(label);
+      row.appendChild(val);
+      row.appendChild(sw);
+      host.appendChild(row);
+    });
+  }
+
+  function renderClaude(claude) {
+    var chip = document.getElementById("claudeChip");
+    var msg = document.getElementById("claudeMsg");
+    var ok = !!(claude && claude.authenticated);
+    chip.className = "chip " + (ok ? "auth-ok" : "auth-no");
+    chip.textContent = ok ? "연결됨" : "로그인 필요";
+    msg.textContent = (claude && claude.message) ? claude.message : "";
+  }
+
+  function setStatus(text, isError) {
+    var el = document.getElementById("status");
+    el.textContent = text || "";
+    el.className = "status" + (isError ? " err" : "");
+  }
+
+  function handle(d) {
+    if (!d) return;
+    if (d.type === "status") {
+      setStatus(d.text, !!d.error);
+      return;
+    }
+    if (d.type === "data") {
+      renderProfiles(d.profiles || []);
+      renderMetrics(d.metrics || []);
+      renderClaude(d.claude);
+      if (typeof d.status === "string") setStatus(d.status, false);
+    }
+  }
+
+  document.querySelectorAll("[data-act]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var act = el.getAttribute("data-act");
+      if (act === "codexLogin" || act === "saveCurrent") {
+        post({ action: act, name: nameInput() });
+      } else {
+        post({ action: act });
+      }
+    });
+  });
+
+  window.chrome.webview.addEventListener("message", function (e) { handle(e.data); });
+  post({ action: "ready" });
+</script>
+</body>
+</html>

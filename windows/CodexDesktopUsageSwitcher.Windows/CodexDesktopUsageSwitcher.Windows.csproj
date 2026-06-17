@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>CodexDesktopUsageSwitcher.Windows</AssemblyName>
+    <RootNamespace>CodexDesktopUsageSwitcher.Windows</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon>..\..\assets\app.ico</ApplicationIcon>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <!-- Embedded symbols: crash logs and debuggers get file/line info with nothing
+         extra to ship. PathMap keeps the developer's local path and username out of
+         the embedded PDB document table (Deterministic alone does not remap), and
+         Source Link is disabled because its auto-generated JSON re-embeds the
+         original repo root path. -->
+    <DebugType>embedded</DebugType>
+    <PathMap>$(MSBuildThisFileDirectory)=/src/</PathMap>
+    <EnableSourceLink>false</EnableSourceLink>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CodexDesktopUsageSwitcher.Windows.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\switcher\codex-desktop-switch" Link="codex-desktop-switch.py" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\assets\app.ico" Link="assets\app.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4022.49" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="UI\Web\popup.html" />
+    <EmbeddedResource Include="UI\Web\dashboard.html" />
+    <EmbeddedResource Include="UI\Web\settings.html" />
+  </ItemGroup>
+</Project>

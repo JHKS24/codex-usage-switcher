@@ -1,0 +1,60 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The image-default python3 is Homebrew-managed (PEP 668) and rejects bare
+      # pip installs; use a toolcache python instead.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python syntax
+        run: python3 -m py_compile switcher/codex-desktop-switch
+      - name: Python tests
+        run: |
+          python3 -m pip install --quiet pytest
+          python3 -m pytest switcher/tests -q
+      - name: Build app bundle
+        run: ./scripts/build.sh
+      - name: Validate Info.plist
+        run: plutil -lint build/CodexDesktopMenu.app/Contents/Info.plist
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Python syntax
+        run: python -m py_compile switcher/codex-desktop-switch
+      - name: Python lint (ruff)
+        shell: pwsh
+        run: |
+          python -m pip install --quiet ruff
+          Copy-Item switcher/codex-desktop-switch "$env:TEMP/codex_desktop_switch_lint.py"
+          python -m ruff check "$env:TEMP/codex_desktop_switch_lint.py" switcher/tests
+      - name: Python tests
+        run: |
+          python -m pip install --quiet pytest
+          python -m pytest switcher/tests -q
+      - name: Build (warnings as errors)
+        run: dotnet build windows/CodexDesktopUsageSwitcher.Windows/CodexDesktopUsageSwitcher.Windows.csproj -c Release -warnaserror
+      - name: Unit tests
+        run: dotnet test windows/CodexDesktopUsageSwitcher.Windows.Tests/CodexDesktopUsageSwitcher.Windows.Tests.csproj -c Release
+      - name: Windows smoke tests
+        shell: pwsh
+        run: .\scripts\test-windows.ps1
+      - name: Package Windows release artifact
+        shell: pwsh
+        run: .\scripts\package-windows.ps1 -SelfContained
