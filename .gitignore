@@ -1,30 +1,19 @@
-*.app/
+# Build output
 build/
 dist/
-.codegraph/
 [Bb]in/
 [Oo]bj/
-__pycache__/
-*.pyc
-.DS_Store
 
-# Codex / Claude secrets and local state
-auth.json
-credentials.json
-.codex-switch/
-.cdx/
-backups/
-profiles/
-*.sqlite
-*.sqlite-wal
-*.sqlite-shm
-
-# Local editor/runtime noise
+# Editor / runtime noise
 .idea/
 .vscode/
+.DS_Store
 *.log
 NUL
 
-# Local AMBR visual evidence can include desktop context.
-_agent-managed-build-review/assets/
-_agent-managed-build-review/evidence/
+# Codex / Claude secrets and local state (never commit)
+auth.json
+credentials.json
+.codex-switch/
+backups/
+profiles/

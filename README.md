@@ -1,117 +1,51 @@
 # Codex Desktop Usage Switcher
 
-Local helper for switching Codex Desktop profiles and showing AI tool usage.
-macOS uses a menu bar app; Windows uses a tray-icon app with a custom usage
-popup.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6.svg)](#)
+[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4.svg)](#)
 
-## Quick Start
+A **Windows-only system-tray app** (.NET 10 WinForms + WebView2) that switches
+Codex Desktop accounts and shows Codex and Claude usage at a glance.
 
-### Windows — one-click install on another PC
+## Features
 
-Build `dist\CodexDesktopUsageSwitcher-win-x64.zip` once with
-`.\scripts\package-windows.ps1 -SelfContained`, copy it to the target PC,
-unzip, and double-click `install.cmd`. No .NET runtime needed; Python 3 is
-checked (winget install offered) by the installer.
+- **Safe account switching** — swaps `~/.codex/auth.json` from saved profiles
+  with timestamped backups and rollback; refuses to switch while Codex Desktop
+  is running.
+- **Usage popup** — Codex and Claude 5-hour and weekly remaining %, reset
+  countdown, and per-profile quota, with one-click profile switching.
+- **Dashboard** — 14-day token bars, weekday × hour heatmap, per-turn stats,
+  live 5h/weekly limit donuts, and estimated cost from an auto-updating model
+  price table.
+- **GUI logins** — in-app Claude OAuth (PKCE), plus terminal-based Codex and
+  Claude Code logins.
+- **Bilingual UI** — English / 한국어, switchable in Settings.
 
-### From source
+## Quick start (from source)
 
-Windows:
+Requires the **.NET 10 SDK**. From the repo root:
 
 ```powershell
-git clone https://github.com/cogusrlchg-wq/codex-desktop-usage-switcher.git
-cd codex-desktop-usage-switcher
-.\scripts\install-local-windows.ps1
+./build-windows.ps1          # build the single-file exe
+./build-windows.ps1 -Test    # run the unit tests first, then build
 ```
 
-Run:
+This produces a single, self-contained executable (~56 MB, no .NET runtime
+needed on the target machine) at:
 
-```powershell
-& "$env:LOCALAPPDATA\CodexDesktopUsageSwitcher\CodexDesktopUsageSwitcher.Windows.exe"
+```text
+build/win-x64/CodexDesktopUsageSwitcher.Windows.exe
 ```
 
-macOS:
+Double-click it to run. The app lives in the system tray — left-click for the
+usage popup, right-click for the Open/Quit menu.
 
-```bash
-git clone https://github.com/cogusrlchg-wq/codex-desktop-usage-switcher.git && cd codex-desktop-usage-switcher && ./scripts/install-local.sh
-```
-
-Then open it:
-
-```bash
-open "$HOME/Applications/CodexDesktopMenu.app"
-```
-
-The Windows installer builds the tray app, copies it under
-`%LOCALAPPDATA%\CodexDesktopUsageSwitcher`, adds a Start Menu shortcut, and
-creates `%USERPROFILE%\bin\codex-desktop-switch.cmd`.
-
-The macOS installer builds the menu app and creates `~/bin/codex-desktop-switch`.
-Make sure the relevant `bin` folder is in your shell `PATH`.
+## More
 
 - [English README](README.en.md)
 - [한국어 README](README.ko.md)
-- [AGENTS.md](AGENTS.md) — let an AI agent (Claude / Codex) add accounts for you
+- [SECURITY.md](SECURITY.md)
 
-![Anonymized menu screenshot](assets/menu-screenshot-redacted.svg)
+## License
 
-## Windows Package
-
-Create a local distributable ZIP without PDB files, local install paths, or user
-state:
-
-```powershell
-.\scripts\package-windows.ps1 -SelfContained
-```
-
-Output:
-
-```text
-dist\CodexDesktopUsageSwitcher-win-x64.zip
-```
-
-## Menu Behavior
-
-- On Windows, the app stays in the system tray by default. Left-click or
-  right-click the tray icon to open the custom usage popup.
-- The tray notification area can show multiple live number icons. In `설정`,
-  toggle up to six taskbar indicators: Codex 5H / Week, CodexSub 5H / Week,
-  and Claude 5H / Week.
-- The popup shows the active Codex profile plus current 5H / Week remaining
-  quota immediately.
-- Click `새로고침` in the popup to refresh values in place. The popup stays open.
-- Click a profile name to select it, then click `Switch profile` (or
-  double-click the profile row) to switch accounts. The switcher asks for
-  confirmation, quits active Codex sessions first, applies
-  `use <profile> --apply`, and opens Codex again.
-- Open `설정` from the Windows popup to add a Codex profile, save the current
-  Codex login as a profile, open Claude usage login, open Claude Code login, run
-  Doctor, or open the profiles folder.
-- On Windows, `Claude 로그인` opens a visible terminal window. Finish the browser
-  authorization there, then paste only the OAuth code into that terminal.
-- Codex and Claude usage are shown as **remaining quota**, so warning icons
-  appear at `20%` or less. Claude remaining quota is calculated as
-  `100 - current Claude utilization`.
-- Profile names in the screenshot are anonymized examples.
-
-## Security First
-
-- Do not commit `auth.json`, `credentials.json`, profile folders, backups,
-  sessions, logs, or SQLite state.
-- This tool depends on local Codex Desktop and the `codex` CLI. On Windows, set
-  `CODEX_DESKTOP_APP_PATH` if Codex.exe is installed outside the common
-  locations, and set `CODEX_CLI_PATH` if `codex` is not on `PATH`.
-- Review [SECURITY.md](SECURITY.md) before publishing or sharing a fork.
-- Codex and Claude usage endpoints are unofficial and may change without notice.
-
-## Credits
-
-The per-profile model and the `import-cdx` migration path are inspired by
-[ezpzai/cdx](https://github.com/ezpzai/cdx) (Apache-2.0). This project is an
-independent local menu/tray implementation, not a fork.
-
-The usage-insights layer — the dashboard charts, the Codex/Claude transcript
-parsing, and the usage/cost calculations — is a C# port of
-[codex-usage-monitor](https://github.com/kimbyungsu/codex-usage-monitor) (MIT).
-Claude usage via OAuth follows the local credential format and endpoints of
-**claude-usage-bar**. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the
-full upstream license texts.
+MIT © 2026 JHK24. See [LICENSE](LICENSE).

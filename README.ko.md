@@ -1,204 +1,119 @@
 # Codex Desktop Usage Switcher
 
-Codex Desktop 프로필 전환과 AI 도구 사용량 확인을 처리하는 로컬 도구입니다.
-macOS에서는 메뉴바 앱으로, Windows에서는 트레이 아이콘과 커스텀 사용량
-팝업으로 동작합니다.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6.svg)](#지원-환경)
+[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4.svg)](#빌드--실행소스에서)
 
-## 빠르게 시작하기
-
-### Windows — 원클릭 설치 (다른 PC에 배포할 때)
-
-빌드 머신에서 배포 ZIP을 한 번 만들고:
-
-```powershell
-.\scripts\package-windows.ps1 -SelfContained
-```
-
-생성된 `dist\CodexDesktopUsageSwitcher-win-x64.zip`을 대상 PC에 복사한 뒤
-**압축을 풀고 `install.cmd`를 더블클릭**하면 끝입니다. 설치 스크립트가
-Python 3 확인(없으면 winget 설치 제안), `%LOCALAPPDATA%` 설치, 시작 메뉴 +
-로그인 자동 시작 바로가기 생성, 앱 실행까지 처리합니다. .NET 런타임은
-self-contained 빌드라 필요 없습니다. 옵션: `install.cmd -NoStartup -NoLaunch`
-
-### 소스에서 설치
-
-Windows:
-
-```powershell
-git clone https://github.com/cogusrlchg-wq/codex-desktop-usage-switcher.git
-cd codex-desktop-usage-switcher
-.\scripts\install-local-windows.ps1
-```
-
-Windows 트레이 앱 실행:
-
-```powershell
-& "$env:LOCALAPPDATA\CodexDesktopUsageSwitcher\CodexDesktopUsageSwitcher.Windows.exe"
-```
-
-배포용 ZIP 생성:
-
-```powershell
-.\scripts\package-windows.ps1 -SelfContained
-```
-
-macOS:
-
-```bash
-git clone https://github.com/cogusrlchg-wq/codex-desktop-usage-switcher.git && cd codex-desktop-usage-switcher && ./scripts/install-local.sh
-```
-
-앱 실행:
-
-```bash
-open "$HOME/Applications/CodexDesktopMenu.app"
-```
-
-Windows 설치 스크립트는 앱을 `%LOCALAPPDATA%\CodexDesktopUsageSwitcher`에
-복사하고, 시작 메뉴 바로가기와 CLI shortcut을 만듭니다.
-
-```text
-%USERPROFILE%\bin\codex-desktop-switch.cmd
-```
-
-macOS 설치 스크립트는 앱을 `~/Applications`에 복사하고 CLI shortcut을 만듭니다.
-
-```text
-~/bin/codex-desktop-switch
-```
-
-`~/bin`이 shell `PATH`에 들어 있어야 합니다.
-
-## 스크린샷
-
-![익명화된 메뉴 스크린샷](assets/menu-screenshot-redacted.svg)
-
-이미지는 더미 프로필명을 사용한 예시입니다.
+Codex Desktop 계정을 전환하고 Codex·Claude 사용량을 보여 주는 **Windows 전용
+시스템 트레이 앱**입니다. **.NET 10 WinForms + WebView2** 기반의 네이티브 C#
+애플리케이션으로, macOS 앱도 Python도 명령줄 도구도 없습니다.
 
 ## 하는 일
 
-- `~/.codex-switch/profiles/` 아래 Codex 프로필을 전환합니다.
-- Codex 5H / Week 남은 사용량을 보여줍니다.
-- 선택적으로 Claude 5H / Week 남은 사용량을 보여줍니다.
-- Windows에서는 기본적으로 트레이 아이콘만 유지됩니다. 트레이 아이콘을
-  좌클릭/우클릭하면 커스텀 사용량 팝업이 열립니다.
-- Windows `설정`에서 작업표시줄 알림 영역 숫자 아이콘을 최대 6개까지
-  켜고 끌 수 있습니다: Codex 5H / Week, CodexSub 5H / Week,
-  Claude 5H / Week.
-- 팝업은 열리자마자 현재 Codex 프로필과 5H / Week 남은 사용량을 보여줍니다.
-- 팝업의 `새로고침`을 누르면 창을 닫지 않고 내부 값만 갱신합니다.
-- 프로필 행을 누르면 선택되고, `Switch profile` 버튼이나 행 더블클릭을
-  누르면 확인창을 띄운 뒤 계정을 전환합니다.
-- Windows 팝업의 `설정` 창에서 Codex 프로필 로그인 추가, 현재 계정 저장,
-  Claude 사용량 로그인, Claude Code 로그인, Doctor, 프로필 폴더 열기를 할 수
-  있습니다.
+### Codex Desktop 계정을 안전하게 전환
 
-경고 기준:
+- `~/.codex-switch/profiles`에 저장된 프로필에서 `~/.codex/auth.json`을 교체해
+  계정·프로필을 전환합니다.
+- 전환할 때마다 **타임스탬프가 찍힌 백업**을 만들고 **롤백**을 지원합니다.
+- **Codex Desktop 또는 app-server가 실행 중이면 전환을 거부**하며, 실행 중인
+  프로세스를 확인할 수 없을 때도 거부합니다. 그래서 전환이 실행 중인 세션을
+  손상시키는 일이 없습니다.
 
-- Codex와 Claude 모두 남은 사용량 기준으로 표시하므로 `20%` 이하에서
-  주황색 경고가 뜹니다.
-- Claude 남은 사용량은 `100 - 현재 Claude 사용률`로 계산합니다.
+### 사용량 팝업
+
+트레이 아이콘을 좌클릭하면 Codex와 Claude 사용량을 나란히 보여 주는 팝업이
+열립니다.
+
+- 두 제공자의 5시간 / 주간 **남은 %**.
+- 다음 한도 구간까지의 **리셋 카운트다운**.
+- **프로필별 quota**.
+- 선택한 프로필을 **원클릭으로 전환**.
+
+### 대시보드 창
+
+- **14일 모델 누적 토큰 막대 그래프**.
+- 활동량 **요일 × 시간 히트맵**.
+- **턴별 토큰 통계**.
+- Codex와 Claude **5시간 / 주간 한도 도넛 차트(실시간)**.
+- 자동 갱신되는 모델 가격표로 계산한 **예상 비용 요약**. 가격은 번들된 스냅샷에
+  담긴 공식 OpenAI / Anthropic 요율을 사용하고 주기적으로 갱신되며, 알 수 없는
+  모델은 가격을 매기지 않고 남겨 둡니다.
+
+### 로그인 (모두 GUI 동작)
+
+- **Claude 사용량 로그인** — 앱 내장 **OAuth (PKCE)** flow입니다. 브라우저가
+  열리고, 일회용 코드를 다이얼로그에 붙여넣습니다.
+- **Codex 프로필 로그인**과 **Claude Code 로그인** — 해당 CLI를 실행하는
+  터미널을 엽니다.
+- 현재 **Codex 로그인을 프로필로 저장**할 수도 있습니다.
+
+### 이중 언어 UI
+
+영어 / 한국어, **설정**에서 언어를 전환합니다. UI는 기본적으로 시스템 언어를
+따르며 선택을 저장합니다.
+
+## 빌드 & 실행(소스에서)
+
+**.NET 10 SDK**가 필요합니다. 레포 루트에서:
+
+```powershell
+./build-windows.ps1          # 단일 파일 exe 빌드
+./build-windows.ps1 -Test    # 단위 테스트를 먼저 실행한 뒤 빌드
+```
+
+이 명령은 대상 머신에 .NET 런타임도 Python도 필요 없는 **self-contained** 단일
+실행 파일(~56 MB)을 만듭니다.
+
+```text
+build/win-x64/CodexDesktopUsageSwitcher.Windows.exe
+```
+
+이 exe를 더블클릭하면 실행됩니다. 앱은 **시스템 트레이**에 상주합니다.
+
+- 트레이 아이콘 **좌클릭** → 사용량 팝업.
+- 트레이 아이콘 **우클릭** → 열기 / 종료 메뉴.
+
+보조 스크립트는 `scripts/` 아래에 있습니다(`install-local-windows.ps1`,
+`package-windows.ps1`, `test-windows.ps1`, `installer/install.cmd` /
+`installer/install.ps1`). 단일 빌드 진입점은 레포 루트의
+`./build-windows.ps1`입니다.
 
 ## 지원 환경
 
-- macOS 또는 Windows
-- Codex Desktop
-- Python 3
-- macOS: Xcode command line tools와 `swiftc`
-- Windows: 배포용 self-contained ZIP은 .NET 런타임이 필요 없습니다.
-  .NET SDK/runtime은 로컬 빌드할 때만 필요합니다.
-- `codex` CLI가 `PATH`에 있거나 `CODEX_CLI_PATH`가 설정되어 있어야 함
-
-Linux는 지원하지 않습니다. Windows에서 Codex.exe가 일반 설치 위치에 없으면
-`CODEX_DESKTOP_APP_PATH`를 설정하세요.
-
-## Codex ID 추가
-
-```bash
-codex-desktop-switch login main
-codex-desktop-switch login work
-codex-desktop-switch list
-```
-
-CLI로 직접 전환할 때는 Codex Desktop을 완전히 종료한 뒤 실행합니다.
-
-```bash
-codex-desktop-switch use main
-codex-desktop-switch use main --apply
-```
-
-메뉴/트레이 앱에서 전환하면 확인창 이후 Codex 종료 요청, 잔여 app-server/tool-session
-정리, 전환, Codex 재실행 순서로 처리합니다.
-
-메뉴 표시 순서를 고정하려면 아래 파일을 둡니다.
-
-```json
-{
-  "profiles": ["main", "work", "personal"],
-  "refresh_minutes": 10
-}
-```
-
-저장 위치: `~/.codex-switch/config.json`
-
-## CLI
-
-```bash
-codex-desktop-switch list
-codex-desktop-switch current
-codex-desktop-switch usage
-codex-desktop-switch use main --apply
-codex-desktop-switch restore <backup-id> --apply
-codex-desktop-switch stop-codex --help
-```
-
-`use`는 기본 dry-run입니다. 실제 전환은 `--apply`가 있을 때만 합니다.
-
-## Claude 사용량
-
-```bash
-codex-desktop-switch claude-login
-codex-desktop-switch claude-usage --json
-```
-
-Windows 트레이 메뉴의 `Claude 로그인`은 터미널 창을 열고 interactive
-`claude-login`을 실행합니다. 브라우저에서 승인한 뒤 OAuth code만 그 터미널에
-붙여넣으세요.
-
-OAuth code 만료 또는 rate limit 오류가 나면 같은 코드를 반복 재시도하지 말고,
-pending login 상태를 초기화한 뒤 새 로그인 flow를 시작합니다.
-
-```bash
-codex-desktop-switch claude-login-reset
-```
-
-## Gatekeeper
-
-이 앱은 직접 빌드한 미서명 앱입니다. 첫 실행 때 macOS가 차단할 수 있습니다.
-Finder에서 `CodexDesktopMenu.app` 우클릭 → **열기**를 사용하세요.
-
-터미널 대안:
-
-```bash
-xattr -dr com.apple.quarantine "$HOME/Applications/CodexDesktopMenu.app"
-open "$HOME/Applications/CodexDesktopMenu.app"
-```
+- **Windows 10 1809+**(10.0.17763) 또는 Windows 11.
+- **Microsoft Edge WebView2 런타임**(최신 Windows 10/11에는 기본 설치).
+- **Codex 프로필 로그인**용: Codex Desktop과 `codex` CLI. `codex`가 `PATH`에
+  없으면 `CODEX_CLI_PATH` 환경 변수를 설정하세요.
+- **Claude Code 로그인**용: Claude Code `claude` CLI.
 
 ## 보안
 
-- `auth.json`, `credentials.json`, profile, backup, session, log, SQLite state를 커밋하지 마세요.
-- `~/.codex-switch`는 사용자 본인만 접근 가능한 로컬 영역으로 유지하세요.
-- Codex와 Claude 사용량 endpoint는 비공식이며 언제든 바뀔 수 있습니다.
-- 자세한 내용은 [SECURITY.md](SECURITY.md)를 참고하세요.
+- 앱은 **토큰 내용을 출력·로그·표시하지 않습니다**.
+- `auth.json` / 자격증명은 **백업과 함께 원자적으로** 복사됩니다.
+- 계정 전환은 **Codex Desktop이 완전히 종료되어 있어야** 가능합니다.
+- OAuth는 항상 **사람과 브라우저**가 필요합니다.
+- 실제 `~/.codex`, `~/.codex-switch`, `~/.config/claude-usage-bar`는 **레포
+  밖에 있으며 절대 커밋되지 않습니다**.
+
+자세한 내용은 [SECURITY.md](SECURITY.md)를 참고하세요.
+
+## 레포 & 라이선스
+
+- 레포: <https://github.com/cogusrlchg-wq/codex-desktop-usage-switcher>
+- 라이선스: **MIT** © 2026 JHK24. [LICENSE](LICENSE) 참고.
 
 ## Credits
 
-프로필 단위 관리 방식과 `import-cdx` 마이그레이션 경로는
-[ezpzai/cdx](https://github.com/ezpzai/cdx) (Apache-2.0)에서 영감을 받았습니다.
-이 프로젝트는 cdx의 fork가 아니라 로컬 메뉴/트레이용 독립 구현입니다.
+이 프로젝트는 여러 업스트림 오픈소스 프로젝트의 작업을 기반으로 합니다.
 
-사용량 인사이트 — 대시보드 차트, Codex/Claude 트랜스크립트 파싱, 사용량/비용 계산 — 은
-[codex-usage-monitor](https://github.com/kimbyungsu/codex-usage-monitor) (MIT)를
-C#로 포팅한 것입니다. Claude OAuth 사용량은 **claude-usage-bar**의 로컬 자격증명
-포맷·엔드포인트를 따릅니다. 업스트림 라이선스 전문은
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)를 참고하세요.
+- **사용량 인사이트** 로직 — 대시보드 차트, Codex/Claude 트랜스크립트 파싱,
+  사용량/비용 계산 — 은
+  [codex-usage-monitor](https://github.com/kimbyungsu/codex-usage-monitor)
+  (MIT)에서 포팅했습니다.
+- **Claude OAuth 사용량** 방식은 **claude-usage-bar**를 따릅니다.
+- 프로필 단위 관리 방식과 `import-cdx` 마이그레이션 경로는 업스트림
+  [ezpzai/cdx](https://github.com/ezpzai/cdx) (Apache-2.0) 계보를 따릅니다. 이
+  프로젝트는 fork가 아니라 독립 구현입니다.
+
+업스트림 라이선스 전문은 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)를
+참고하세요.
