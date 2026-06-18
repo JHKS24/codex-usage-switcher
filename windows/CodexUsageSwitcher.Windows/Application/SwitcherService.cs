@@ -321,7 +321,7 @@ internal sealed class SwitcherService
     {
         var active = ActiveCodexProfile(current);
         var codexUsage = usageRows.FirstOrDefault(row => row.Profile.Equals(active, StringComparison.OrdinalIgnoreCase));
-        var metricDefinitions = BuildTrayMetricDefinitions(profiles, active);
+        var metricDefinitions = BuildTrayMetricDefinitions(profiles, visibleMetricKeys);
 
         return metricDefinitions
             .Select(metric => new TrayMetricRow(
@@ -337,7 +337,7 @@ internal sealed class SwitcherService
 
     private static IReadOnlyList<TrayMetricDefinition> BuildTrayMetricDefinitions(
         IReadOnlyList<ProfileSummary> profiles,
-        string active)
+        IReadOnlySet<string> visibleMetricKeys)
     {
         var definitions = new List<TrayMetricDefinition>
         {
@@ -345,17 +345,16 @@ internal sealed class SwitcherService
             new("codex:week", "codex", Localizer.L("tray.metric.codexWeek"), "CW", Weekly: true),
         };
 
-        var secondaryProfiles = profiles
+        var profileNames = profiles
             .Select(profile => profile.Name)
             .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Where(name => !name.Equals(active, StringComparison.OrdinalIgnoreCase))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-        for (var index = 0; index < secondaryProfiles.Length; index++)
+        for (var index = 0; index < profileNames.Length; index++)
         {
-            var profile = secondaryProfiles[index];
-            var keyPrefix = index == 0 ? "codexsub" : $"codexprofile:{profile}";
-            var labelPrefix = index == 0 ? "S" : $"P{Math.Min(index + 1, 9)}";
+            var profile = profileNames[index];
+            var keyPrefix = $"codexprofile:{profile}";
+            var labelPrefix = $"P{Math.Min(index + 1, 9)}";
             definitions.Add(new(
                 $"{keyPrefix}:5h",
                 "codexprofile",
@@ -372,9 +371,44 @@ internal sealed class SwitcherService
                 Profile: profile));
         }
 
+        var legacySubProfile = FindLegacySubProfile(profileNames);
+        if (legacySubProfile is not null &&
+            (visibleMetricKeys.Contains("codexsub:5h") || visibleMetricKeys.Contains("codexsub:week")))
+        {
+            definitions.Add(new(
+                "codexsub:5h",
+                "codexprofile",
+                Localizer.L("tray.metric.codexSub5h"),
+                "S5",
+                Weekly: false,
+                Profile: legacySubProfile));
+            definitions.Add(new(
+                "codexsub:week",
+                "codexprofile",
+                Localizer.L("tray.metric.codexSubWeek"),
+                "SW",
+                Weekly: true,
+                Profile: legacySubProfile));
+        }
+
         definitions.Add(new("claude:5h", "claude", Localizer.L("tray.metric.claude5h"), "L5", Weekly: false));
         definitions.Add(new("claude:week", "claude", Localizer.L("tray.metric.claudeWeek"), "LW", Weekly: true));
         return definitions;
+    }
+
+    private static string? FindLegacySubProfile(IReadOnlyList<string> profileNames)
+    {
+        string[] preferredNames = ["sub", "codexsub", "codex-sub", "codex_sub"];
+        foreach (var preferred in preferredNames)
+        {
+            var match = profileNames.FirstOrDefault(name => name.Equals(preferred, StringComparison.OrdinalIgnoreCase));
+            if (match is not null)
+            {
+                return match;
+            }
+        }
+
+        return null;
     }
 
     private static int? ResolveTrayMetric(

@@ -25,7 +25,7 @@ internal static class InteractiveTerminal
             File.WriteAllText(
                 scriptPath,
                 BuildScript(executable, args, environment, title, instructions, failureHint),
-                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
 
             using var process = Process.Start(new ProcessStartInfo
             {
@@ -52,8 +52,10 @@ internal static class InteractiveTerminal
     {
         var builder = new StringBuilder();
         builder.AppendLine($"$Host.UI.RawUI.WindowTitle = {PsString(title)}");
-        builder.AppendLine("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8");
-        builder.AppendLine("[Console]::InputEncoding = [System.Text.Encoding]::UTF8");
+        builder.AppendLine("chcp.com 65001 > $null");
+        builder.AppendLine("$OutputEncoding = [System.Text.UTF8Encoding]::new($false)");
+        builder.AppendLine("[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)");
+        builder.AppendLine("[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)");
         if (environment is not null)
         {
             foreach (var pair in environment)
