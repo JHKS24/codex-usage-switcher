@@ -65,7 +65,7 @@ Codex Desktop 계정을 전환하고 Codex·Claude 사용량을 보여 주는 **
 실행 파일(~56 MB)을 만듭니다.
 
 ```text
-build/win-x64/CodexDesktopUsageSwitcher.Windows.exe
+build/win-x64/CodexUsageSwitcher.Windows.exe
 ```
 
 이 exe를 더블클릭하면 실행됩니다. 앱은 **시스템 트레이**에 상주합니다.

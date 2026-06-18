@@ -34,7 +34,7 @@ This produces a single, self-contained executable (~56 MB, no .NET runtime
 needed on the target machine) at:
 
 ```text
-build/win-x64/CodexDesktopUsageSwitcher.Windows.exe
+build/win-x64/CodexUsageSwitcher.Windows.exe
 ```
 
 Double-click it to run. The app lives in the system tray — left-click for the

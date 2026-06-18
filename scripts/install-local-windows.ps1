@@ -1,10 +1,10 @@
 #!/usr/bin/env pwsh
 # Builds the single self-contained Windows exe from source and installs it locally for the
-# current user: copies it to %LOCALAPPDATA%\CodexDesktopUsageSwitcher, refreshes the Start Menu
+# current user: copies it to %LOCALAPPDATA%\CodexUsageSwitcher, refreshes the Start Menu
 # shortcut, and offers to launch the tray app. Intended for developers building from a clone.
 [CmdletBinding()]
 param(
-    [string]$InstallDir = "$env:LOCALAPPDATA\CodexDesktopUsageSwitcher",
+    [string]$InstallDir = "$env:LOCALAPPDATA\CodexUsageSwitcher",
     # Kept as a harmless no-op alias: the build is always single-file self-contained.
     [switch]$SelfContained,
     # Skip the "launch now?" prompt and do not start the app afterwards.
@@ -27,14 +27,14 @@ Write-Host "=== Building single self-contained exe ==="
 & (Join-Path $Root "build-windows.ps1")
 if ($LASTEXITCODE -ne 0) { throw "build-windows.ps1 failed (exit $LASTEXITCODE)." }
 
-$BuildExe = Join-Path $Root "build\win-x64\CodexDesktopUsageSwitcher.Windows.exe"
+$BuildExe = Join-Path $Root "build\win-x64\CodexUsageSwitcher.Windows.exe"
 if (-not (Test-Path -LiteralPath $BuildExe)) {
     throw "Build finished but $BuildExe is missing; the publish may have failed."
 }
 
 # 2. Stop a running instance and wait for it to fully exit. Stop-Process returns before
 #    teardown completes; without the wait the copy below can race a still-mapped exe.
-$running = Get-Process -Name "CodexDesktopUsageSwitcher.Windows" -ErrorAction SilentlyContinue
+$running = Get-Process -Name "CodexUsageSwitcher.Windows" -ErrorAction SilentlyContinue
 $wasRunning = [bool]$running
 if ($running) {
     Write-Host "Stopping running instance..."
@@ -44,7 +44,7 @@ if ($running) {
 
 # 3. Copy the single exe into the install dir (with retry, in case a handle lingers).
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-$exePath = Join-Path $InstallDir "CodexDesktopUsageSwitcher.Windows.exe"
+$exePath = Join-Path $InstallDir "CodexUsageSwitcher.Windows.exe"
 $attempt = 0
 while ($true) {
     $attempt++

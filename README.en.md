@@ -66,7 +66,7 @@ This produces a single, **self-contained** executable (~56 MB) that needs
 neither the .NET runtime nor Python on the target machine:
 
 ```text
-build/win-x64/CodexDesktopUsageSwitcher.Windows.exe
+build/win-x64/CodexUsageSwitcher.Windows.exe
 ```
 
 Double-click the exe to run. It lives in the **system tray**:

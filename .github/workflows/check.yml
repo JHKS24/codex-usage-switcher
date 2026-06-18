@@ -17,9 +17,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: Build (warnings as errors)
-        run: dotnet build windows/CodexDesktopUsageSwitcher.Windows/CodexDesktopUsageSwitcher.Windows.csproj -c Release -warnaserror
+        run: dotnet build windows/CodexUsageSwitcher.Windows/CodexUsageSwitcher.Windows.csproj -c Release -warnaserror
       - name: Unit tests
-        run: dotnet test windows/CodexDesktopUsageSwitcher.Windows.Tests/CodexDesktopUsageSwitcher.Windows.Tests.csproj -c Release
+        run: dotnet test windows/CodexUsageSwitcher.Windows.Tests/CodexUsageSwitcher.Windows.Tests.csproj -c Release
       - name: Publish single-file self-contained exe
         shell: pwsh
         run: ./build-windows.ps1

@@ -36,7 +36,7 @@ and [SECURITY.md](SECURITY.md).
 
 - **Stack:** .NET 10 WinForms + WebView2. The single build entry point is
   `./build-windows.ps1` at the repo root, which produces a self-contained exe at
-  `build/win-x64/CodexDesktopUsageSwitcher.Windows.exe`. Helper scripts live under
+  `build/win-x64/CodexUsageSwitcher.Windows.exe`. Helper scripts live under
   `scripts/` (install/package/test); `./build-windows.ps1` is the one you invoke.
 - **Build:** run `./build-windows.ps1` (needs the .NET 10 SDK). Requires Windows
   10 1809+ (10.0.17763) and the Edge WebView2 runtime to run.

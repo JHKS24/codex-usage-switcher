@@ -9,8 +9,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$App = Join-Path $Root "windows\CodexDesktopUsageSwitcher.Windows\CodexDesktopUsageSwitcher.Windows.csproj"
-$Tests = Join-Path $Root "windows\CodexDesktopUsageSwitcher.Windows.Tests\CodexDesktopUsageSwitcher.Windows.Tests.csproj"
+$App = Join-Path $Root "windows\CodexUsageSwitcher.Windows\CodexUsageSwitcher.Windows.csproj"
+$Tests = Join-Path $Root "windows\CodexUsageSwitcher.Windows.Tests\CodexUsageSwitcher.Windows.Tests.csproj"
 
 foreach ($project in @($App, $Tests)) {
     if (-not (Test-Path -LiteralPath $project)) {

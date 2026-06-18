@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 # Builds the single self-contained Windows exe and packages a redistributable zip:
-# dist/CodexDesktopUsageSwitcher-win-x64/ holds the exe plus the end-user installer
-# (install.cmd + install.ps1), and is zipped to dist/CodexDesktopUsageSwitcher-win-x64.zip.
+# dist/CodexUsageSwitcher-win-x64/ holds the exe plus the end-user installer
+# (install.cmd + install.ps1), and is zipped to dist/CodexUsageSwitcher-win-x64.zip.
 [CmdletBinding()]
 param(
     # Kept as a harmless no-op alias: the build is always single-file self-contained.
@@ -18,14 +18,14 @@ Write-Host "=== Building single self-contained exe ==="
 & (Join-Path $Root "build-windows.ps1")
 if ($LASTEXITCODE -ne 0) { throw "build-windows.ps1 failed (exit $LASTEXITCODE)." }
 
-$BuildExe = Join-Path $Root "build\win-x64\CodexDesktopUsageSwitcher.Windows.exe"
+$BuildExe = Join-Path $Root "build\win-x64\CodexUsageSwitcher.Windows.exe"
 if (-not (Test-Path -LiteralPath $BuildExe)) {
     throw "Build finished but $BuildExe is missing; the publish may have failed."
 }
 
 # 2. Stage the exe together with the end-user installer.
 $DistRoot = Join-Path $Root "dist"
-$PackageName = "CodexDesktopUsageSwitcher-$Runtime"
+$PackageName = "CodexUsageSwitcher-$Runtime"
 $Stage = Join-Path $DistRoot $PackageName
 $ZipPath = Join-Path $DistRoot "$PackageName.zip"
 
@@ -45,12 +45,12 @@ Codex Desktop Usage Switcher for Windows
 Install (recommended):
   1. Unzip this package anywhere.
   2. Double-click install.cmd.
-     It copies the app to %LOCALAPPDATA%\CodexDesktopUsageSwitcher, adds Start Menu
+     It copies the app to %LOCALAPPDATA%\CodexUsageSwitcher, adds Start Menu
      and auto-start shortcuts, and launches the tray app.
      Options: install.cmd -NoStartup -NoLaunch
 
 Run without installing:
-  CodexDesktopUsageSwitcher.Windows.exe
+  CodexUsageSwitcher.Windows.exe
 
 Using the app:
 - The app is tray-icon-only by default. Left-click the tray icon for the usage popup

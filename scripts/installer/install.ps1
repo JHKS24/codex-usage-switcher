@@ -1,11 +1,11 @@
 #!/usr/bin/env pwsh
 # End-user installer: run after unzipping a release. Copies the self-contained
-# CodexDesktopUsageSwitcher.Windows.exe (sitting next to this script) into
-# %LOCALAPPDATA%\CodexDesktopUsageSwitcher, creates a Start Menu shortcut (and an
+# CodexUsageSwitcher.Windows.exe (sitting next to this script) into
+# %LOCALAPPDATA%\CodexUsageSwitcher, creates a Start Menu shortcut (and an
 # auto-start shortcut unless -NoStartup), and launches the tray app (unless -NoLaunch).
 [CmdletBinding()]
 param(
-    [string]$InstallDir = "$env:LOCALAPPDATA\CodexDesktopUsageSwitcher",
+    [string]$InstallDir = "$env:LOCALAPPDATA\CodexUsageSwitcher",
     [switch]$NoStartup,
     [switch]$NoLaunch
 )
@@ -17,13 +17,13 @@ Write-Host "Install dir: $InstallDir"
 
 # 0. The exe must be next to this script (i.e. the unzipped release folder).
 $source = $PSScriptRoot
-$sourceExe = Join-Path $source "CodexDesktopUsageSwitcher.Windows.exe"
+$sourceExe = Join-Path $source "CodexUsageSwitcher.Windows.exe"
 if (-not (Test-Path -LiteralPath $sourceExe)) {
-    throw "CodexDesktopUsageSwitcher.Windows.exe was not found next to this installer. Unzip the full release and run install.cmd from inside that folder."
+    throw "CodexUsageSwitcher.Windows.exe was not found next to this installer. Unzip the full release and run install.cmd from inside that folder."
 }
 
 # 1. Stop a running instance and wait for it to actually exit before we overwrite it.
-$running = Get-Process -Name "CodexDesktopUsageSwitcher.Windows" -ErrorAction SilentlyContinue
+$running = Get-Process -Name "CodexUsageSwitcher.Windows" -ErrorAction SilentlyContinue
 if ($running) {
     Write-Host "Stopping running instance..."
     $running | Stop-Process -Force
@@ -39,7 +39,7 @@ if ($resolvedInstallDir.TrimEnd("\") -eq $installRoot.TrimEnd("\")) {
     throw "Refusing to install into a drive root: $InstallDir"
 }
 
-$exePath = Join-Path $InstallDir "CodexDesktopUsageSwitcher.Windows.exe"
+$exePath = Join-Path $InstallDir "CodexUsageSwitcher.Windows.exe"
 $attempt = 0
 while ($true) {
     $attempt++
