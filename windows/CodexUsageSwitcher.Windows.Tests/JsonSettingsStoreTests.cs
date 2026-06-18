@@ -44,6 +44,30 @@ public sealed class JsonSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task CodexSubProfile_RoundTrips_AndSurvivesOtherSettingsWrites()
+    {
+        var store = JsonSettingsStore.CreateAt(SettingsPath);
+
+        await store.SetCodexSubProfileAsync("main", CancellationToken.None);
+        await store.SetTrayMetricVisibilityAsync("codexsub:week", visible: true, CancellationToken.None);
+        await store.SetLanguageAsync("ko", CancellationToken.None);
+
+        Assert.Equal("main", await store.LoadCodexSubProfileAsync(CancellationToken.None));
+        using var document = JsonDocument.Parse(await File.ReadAllTextAsync(SettingsPath));
+        Assert.Equal("main", document.RootElement.GetProperty("CodexSubProfile").GetString());
+    }
+
+    [Fact]
+    public async Task CodexSubProfile_InvalidName_NormalizesToNull()
+    {
+        var store = JsonSettingsStore.CreateAt(SettingsPath);
+
+        await store.SetCodexSubProfileAsync("../main", CancellationToken.None);
+
+        Assert.Null(await store.LoadCodexSubProfileAsync(CancellationToken.None));
+    }
+
+    [Fact]
     public async Task Load_CorruptFile_ReturnsDefaults_AndPreservesTheBrokenFile()
     {
         Directory.CreateDirectory(_directory);

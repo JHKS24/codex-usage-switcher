@@ -59,6 +59,7 @@ internal sealed record SwitcherSnapshot(
     ClaudeUsage ClaudeUsage,
     IReadOnlyList<ProviderQuotaRow> Providers,
     IReadOnlyList<TrayMetricRow> TrayMetrics,
+    string? CodexSubProfile,
     DateTimeOffset RefreshedAt);
 
 internal sealed record CommandOutcome(bool Ok, int ExitCode, string Message, string Stdout = "", string Stderr = "");

@@ -62,7 +62,43 @@ internal sealed class JsonSettingsStore : ISettingsStore
                 metrics.Remove(metricKey);
             }
 
-            await SaveFileAsync(new SettingsFile(metrics.Order().ToArray(), settings?.Language), cancellationToken).ConfigureAwait(false);
+            await SaveFileAsync(
+                new SettingsFile(metrics.Order().ToArray(), settings?.Language, NormalizeProfile(settings?.CodexSubProfile)),
+                cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public async Task<string?> LoadCodexSubProfileAsync(CancellationToken cancellationToken)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var settings = await LoadFileAsync(cancellationToken).ConfigureAwait(false);
+            return NormalizeProfile(settings?.CodexSubProfile);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public async Task SetCodexSubProfileAsync(string? profile, CancellationToken cancellationToken)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var settings = await LoadFileAsync(cancellationToken).ConfigureAwait(false);
+            var metrics = (settings?.TrayMetrics ?? DefaultTrayMetrics())
+                .Where(metric => !string.IsNullOrWhiteSpace(metric))
+                .Order()
+                .ToArray();
+            await SaveFileAsync(
+                new SettingsFile(metrics, settings?.Language, NormalizeProfile(profile)),
+                cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -95,7 +131,7 @@ internal sealed class JsonSettingsStore : ISettingsStore
                 .Where(metric => !string.IsNullOrWhiteSpace(metric))
                 .Order()
                 .ToArray();
-            await SaveFileAsync(new SettingsFile(metrics, normalized), cancellationToken).ConfigureAwait(false);
+            await SaveFileAsync(new SettingsFile(metrics, normalized, NormalizeProfile(settings?.CodexSubProfile)), cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -105,6 +141,12 @@ internal sealed class JsonSettingsStore : ISettingsStore
 
     private static string? NormalizeLanguage(string? language) =>
         language?.Trim().ToLowerInvariant() switch { "ko" => "ko", "en" => "en", _ => null };
+
+    private static string? NormalizeProfile(string? profile)
+    {
+        var trimmed = profile?.Trim();
+        return ProfileName.IsValid(trimmed) ? trimmed : null;
+    }
 
     private async Task<SettingsFile?> LoadFileAsync(CancellationToken cancellationToken)
     {
@@ -165,5 +207,5 @@ internal sealed class JsonSettingsStore : ISettingsStore
         return ["codex:5h", "codex:week"];
     }
 
-    private sealed record SettingsFile(IReadOnlyList<string>? TrayMetrics, string? Language = null);
+    private sealed record SettingsFile(IReadOnlyList<string>? TrayMetrics, string? Language = null, string? CodexSubProfile = null);
 }
