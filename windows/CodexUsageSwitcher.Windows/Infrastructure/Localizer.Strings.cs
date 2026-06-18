@@ -8,6 +8,8 @@ internal static partial class Localizer
     {
         ["tray.metric.codex5h"] = new("Codex 5h", "Codex 5시간"),
         ["tray.metric.codexWeek"] = new("Codex weekly", "Codex 주간"),
+        ["tray.metric.codexProfile5h"] = new("Codex {0} 5h", "Codex {0} 5시간"),
+        ["tray.metric.codexProfileWeek"] = new("Codex {0} weekly", "Codex {0} 주간"),
         ["tray.metric.codexSub5h"] = new("CodexSub 5h", "CodexSub 5시간"),
         ["tray.metric.codexSubWeek"] = new("CodexSub weekly", "CodexSub 주간"),
         ["tray.metric.claude5h"] = new("Claude 5h", "Claude 5시간"),
