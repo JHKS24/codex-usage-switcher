@@ -134,6 +134,7 @@ internal sealed class SettingsForm : Form
             case "saveCurrent": await SaveCurrentProfileAsync(message.Name).ConfigureAwait(true); break;
             case "openFolder": OpenProfilesFolder(); break;
             case "toggleMetric": await ToggleMetricAsync(message.Key, message.Visible).ConfigureAwait(true); break;
+            case "setCodexSubProfile": await SetCodexSubProfileAsync(message.Value).ConfigureAwait(true); break;
             case "claudeUsageLogin": await LaunchClaudeLoginAsync().ConfigureAwait(true); break;
             case "claudeCodeLogin": await LaunchClaudeCodeLoginAsync().ConfigureAwait(true); break;
             case "doctor": await ShowDoctorAsync().ConfigureAwait(true); break;
@@ -161,6 +162,7 @@ internal sealed class SettingsForm : Form
                 language = Localizer.LanguageCode,
                 status = Localizer.F("settings.status.refreshedAt", snapshot.RefreshedAt.ToString("HH:mm:ss")),
                 profiles = BuildProfiles(snapshot),
+                codexSubProfile = snapshot.CodexSubProfile,
                 metrics = BuildMetrics(snapshot),
                 claude = BuildClaude(snapshot.ClaudeUsage),
             });
@@ -289,6 +291,15 @@ internal sealed class SettingsForm : Form
         }
 
         PostStatus(Localizer.F("settings.taskbarDisplayToggled", visible ? Localizer.L("common.on") : Localizer.L("common.off")));
+        await RefreshAsync().ConfigureAwait(true);
+        SettingsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async Task SetCodexSubProfileAsync(string? profile)
+    {
+        var selected = string.IsNullOrWhiteSpace(profile) ? null : profile.Trim();
+        await _service.SetCodexSubProfileAsync(selected, CancellationToken.None).ConfigureAwait(true);
+        PostStatus(Localizer.L("settings.metrics.codexSubTargetSaved"));
         await RefreshAsync().ConfigureAwait(true);
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }

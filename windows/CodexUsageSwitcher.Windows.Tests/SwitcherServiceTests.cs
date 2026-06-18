@@ -197,7 +197,7 @@ public sealed class SwitcherServiceTests
             }
             """;
         var client = new FakeSwitcherClient().Respond("snapshot", 0, json);
-        var service = CreateService(client, visibleMetrics: ["codexsub:week", "codexprofile:gamma:5h"]);
+        var service = CreateService(client, visibleMetrics: ["codexsub:week", "codexprofile:beta:week", "codexprofile:gamma:5h"], codexSubProfile: "gamma");
 
         var snapshot = await service.LoadSnapshotAsync(CancellationToken.None);
 
@@ -207,6 +207,10 @@ public sealed class SwitcherServiceTests
                 "codex:week",
                 "codexsub:5h",
                 "codexsub:week",
+                "codexprofile:alpha:5h",
+                "codexprofile:alpha:week",
+                "codexprofile:beta:5h",
+                "codexprofile:beta:week",
                 "codexprofile:gamma:5h",
                 "codexprofile:gamma:week",
                 "claude:5h",
@@ -214,7 +218,12 @@ public sealed class SwitcherServiceTests
             ],
             snapshot.TrayMetrics.Select(metric => metric.Key).ToArray());
 
-        var betaWeek = snapshot.TrayMetrics.Single(metric => metric.Key == "codexsub:week");
+        var subWeek = snapshot.TrayMetrics.Single(metric => metric.Key == "codexsub:week");
+        Assert.True(subWeek.Visible);
+        Assert.Equal(60, subWeek.RemainingPercent);
+        Assert.Equal("프로필 gamma", subWeek.Detail);
+
+        var betaWeek = snapshot.TrayMetrics.Single(metric => metric.Key == "codexprofile:beta:week");
         Assert.True(betaWeek.Visible);
         Assert.Equal(40, betaWeek.RemainingPercent);
         Assert.Equal("프로필 beta", betaWeek.Detail);
@@ -225,12 +234,50 @@ public sealed class SwitcherServiceTests
         Assert.Equal("프로필 gamma", gammaFiveHour.Detail);
     }
 
-    private static SwitcherService CreateService(FakeSwitcherClient client, string[]? visibleMetrics = null)
+    [Fact]
+    public async Task LoadSnapshot_MapsCodexSubMetric_ToConfiguredProfile_EvenWhenThatProfileIsActive()
+    {
+        const string json = """
+            {
+              "ok": true,
+              "profiles": [
+                {"profile": "alpha", "exists": true},
+                {"profile": "sub", "exists": true},
+                {"profile": "gamma", "exists": true}
+              ],
+              "current": {
+                "active_label": "alpha",
+                "matched_profile": "alpha",
+                "auth_match": "matched"
+              },
+              "usage": [
+                {"profile": "alpha", "five_hour_left": 10, "weekly_left": 20, "error": null},
+                {"profile": "sub", "five_hour_left": 30, "weekly_left": 40, "error": null},
+                {"profile": "gamma", "five_hour_left": 50, "weekly_left": 60, "error": null}
+              ],
+              "claude_usage": {
+                "ok": true,
+                "authenticated": true
+              }
+            }
+            """;
+        var client = new FakeSwitcherClient().Respond("snapshot", 0, json);
+        var service = CreateService(client, visibleMetrics: ["codexsub:week"], codexSubProfile: "alpha");
+
+        var snapshot = await service.LoadSnapshotAsync(CancellationToken.None);
+
+        var subWeek = snapshot.TrayMetrics.Single(metric => metric.Key == "codexsub:week");
+        Assert.True(subWeek.Visible);
+        Assert.Equal(20, subWeek.RemainingPercent);
+        Assert.Equal("프로필 alpha", subWeek.Detail);
+    }
+
+    private static SwitcherService CreateService(FakeSwitcherClient client, string[]? visibleMetrics = null, string? codexSubProfile = null)
     {
         return new SwitcherService(
             client,
             new FakeInteractiveCliLauncher(),
-            new FakeSettingsStore(visibleMetrics ?? ["codex:5h", "codex:week"]));
+            new FakeSettingsStore(visibleMetrics ?? ["codex:5h", "codex:week"], codexSubProfile));
     }
 
     private sealed class FakeInteractiveCliLauncher : IInteractiveCliLauncher
@@ -241,9 +288,10 @@ public sealed class SwitcherServiceTests
         public CommandOutcome LaunchSaveCurrentProfile(string profile) => new(true, 0, "launched");
     }
 
-    private sealed class FakeSettingsStore(string[] visibleMetrics) : ISettingsStore
+    private sealed class FakeSettingsStore(string[] visibleMetrics, string? codexSubProfile) : ISettingsStore
     {
         private readonly HashSet<string> _metrics = new(visibleMetrics, StringComparer.OrdinalIgnoreCase);
+        private string? _codexSubProfile = codexSubProfile;
 
         public Task<IReadOnlySet<string>> LoadTrayMetricVisibilityAsync(CancellationToken cancellationToken)
         {
@@ -261,6 +309,17 @@ public sealed class SwitcherServiceTests
                 _metrics.Remove(metricKey);
             }
 
+            return Task.CompletedTask;
+        }
+
+        public Task<string?> LoadCodexSubProfileAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult(_codexSubProfile);
+        }
+
+        public Task SetCodexSubProfileAsync(string? profile, CancellationToken cancellationToken)
+        {
+            _codexSubProfile = profile;
             return Task.CompletedTask;
         }
 

@@ -26,10 +26,12 @@ internal sealed class SwitcherService
     public async Task<SwitcherSnapshot> LoadSnapshotAsync(CancellationToken cancellationToken)
     {
         var trayMetricVisibilityTask = _settingsStore.LoadTrayMetricVisibilityAsync(cancellationToken);
+        var codexSubProfileTask = _settingsStore.LoadCodexSubProfileAsync(cancellationToken);
         var (profiles, current, usageRows, claudeUsage) = await LoadBackendSnapshotAsync(cancellationToken).ConfigureAwait(false);
         var trayMetricVisibility = await trayMetricVisibilityTask.ConfigureAwait(false);
+        var codexSubProfile = await codexSubProfileTask.ConfigureAwait(false);
         var providers = BuildProviderRows(current, usageRows, claudeUsage);
-        var trayMetrics = BuildTrayMetricRows(profiles, current, usageRows, claudeUsage, trayMetricVisibility);
+        var trayMetrics = BuildTrayMetricRows(profiles, current, usageRows, claudeUsage, trayMetricVisibility, codexSubProfile);
 
         return new SwitcherSnapshot(
             profiles,
@@ -38,6 +40,7 @@ internal sealed class SwitcherService
             claudeUsage,
             providers,
             trayMetrics,
+            codexSubProfile,
             DateTimeOffset.Now);
     }
 
@@ -80,6 +83,11 @@ internal sealed class SwitcherService
     public Task SetTrayMetricVisibilityAsync(string metricKey, bool visible, CancellationToken cancellationToken)
     {
         return _settingsStore.SetTrayMetricVisibilityAsync(metricKey, visible, cancellationToken);
+    }
+
+    public Task SetCodexSubProfileAsync(string? profile, CancellationToken cancellationToken)
+    {
+        return _settingsStore.SetCodexSubProfileAsync(profile, cancellationToken);
     }
 
     public Task<string?> LoadLanguageAsync(CancellationToken cancellationToken)
@@ -317,11 +325,12 @@ internal sealed class SwitcherService
         CurrentState current,
         IReadOnlyList<UsageRow> usageRows,
         ClaudeUsage claudeUsage,
-        IReadOnlySet<string> visibleMetricKeys)
+        IReadOnlySet<string> visibleMetricKeys,
+        string? codexSubProfile)
     {
         var active = ActiveCodexProfile(current);
         var codexUsage = usageRows.FirstOrDefault(row => row.Profile.Equals(active, StringComparison.OrdinalIgnoreCase));
-        var metricDefinitions = BuildTrayMetricDefinitions(profiles, active);
+        var metricDefinitions = BuildTrayMetricDefinitions(profiles, codexSubProfile);
 
         return metricDefinitions
             .Select(metric => new TrayMetricRow(
@@ -337,25 +346,26 @@ internal sealed class SwitcherService
 
     private static IReadOnlyList<TrayMetricDefinition> BuildTrayMetricDefinitions(
         IReadOnlyList<ProfileSummary> profiles,
-        string active)
+        string? codexSubProfile)
     {
         var definitions = new List<TrayMetricDefinition>
         {
             new("codex:5h", "codex", Localizer.L("tray.metric.codex5h"), "C5", Weekly: false),
             new("codex:week", "codex", Localizer.L("tray.metric.codexWeek"), "CW", Weekly: true),
+            new("codexsub:5h", "codexprofile", Localizer.L("tray.metric.codexSub5h"), "S5", Weekly: false, Profile: codexSubProfile),
+            new("codexsub:week", "codexprofile", Localizer.L("tray.metric.codexSubWeek"), "SW", Weekly: true, Profile: codexSubProfile),
         };
 
-        var secondaryProfiles = profiles
+        var profileNames = profiles
             .Select(profile => profile.Name)
             .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Where(name => !name.Equals(active, StringComparison.OrdinalIgnoreCase))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-        for (var index = 0; index < secondaryProfiles.Length; index++)
+        for (var index = 0; index < profileNames.Length; index++)
         {
-            var profile = secondaryProfiles[index];
-            var keyPrefix = index == 0 ? "codexsub" : $"codexprofile:{profile}";
-            var labelPrefix = index == 0 ? "S" : $"P{Math.Min(index + 1, 9)}";
+            var profile = profileNames[index];
+            var keyPrefix = $"codexprofile:{profile}";
+            var labelPrefix = $"P{Math.Min(index + 1, 9)}";
             definitions.Add(new(
                 $"{keyPrefix}:5h",
                 "codexprofile",
@@ -406,6 +416,7 @@ internal sealed class SwitcherService
         {
             "codex" when !string.IsNullOrWhiteSpace(codexUsage?.Error) => codexUsage.Error,
             "codex" => Localizer.F("tray.detail.codexProfile", active),
+            "codexprofile" when metric.Profile is null => Localizer.L("tray.detail.codexSubSelectProfile"),
             "codexprofile" when profileUsage is null => Localizer.F("tray.detail.codexProfile", metric.Profile ?? Localizer.L("common.unknown")),
             "codexprofile" when !string.IsNullOrWhiteSpace(profileUsage.Error) => profileUsage.Error,
             "codexprofile" => Localizer.F("tray.detail.codexProfile", profileUsage.Profile),
