@@ -111,6 +111,28 @@ public sealed class SwitcherServiceTests
     }
 
     [Fact]
+    public async Task LoadSnapshot_ReportsAuthenticatedClaudeRateLimit()
+    {
+        var json = """
+            {
+              "ok": true,
+              "profiles": [],
+              "current": {"active_label": "main", "auth_match": "matched"},
+              "usage": [],
+              "claude_usage": {"ok": true, "authenticated": true, "error": "rate_limited"}
+            }
+            """;
+        var client = new FakeSwitcherClient().Respond("snapshot", 0, json);
+        var service = CreateService(client);
+
+        var snapshot = await service.LoadSnapshotAsync(CancellationToken.None);
+
+        Assert.True(snapshot.ClaudeUsage.Authenticated);
+        Assert.Null(snapshot.ClaudeUsage.WeeklyLeft);
+        Assert.Equal("잠시 후 재시도", snapshot.ClaudeUsage.Message);
+    }
+
+    [Fact]
     public async Task SwitchProfile_RunsStopUseOpen_InOrder()
     {
         var client = new FakeSwitcherClient()

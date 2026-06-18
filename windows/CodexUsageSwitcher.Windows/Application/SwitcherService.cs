@@ -296,6 +296,11 @@ internal sealed class SwitcherService
             return new ClaudeUsage(false, null, null, null, null, message);
         }
 
+        if (error is "rate_limited")
+        {
+            return new ClaudeUsage(true, null, null, null, null, Localizer.L("usage.claude.rateLimited"));
+        }
+
         if (error is "network" or "usage_request_failed")
         {
             // Logged in, but the usage fetch itself failed transiently.
