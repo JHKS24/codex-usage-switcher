@@ -52,7 +52,7 @@ and [SECURITY.md](SECURITY.md).
 ## License & credits
 
 MIT, (c) 2026 JHK24. Repo:
-<https://github.com/JHKS24/codex-desktop-usage-switcher>.
+<https://github.com/JHKS24/codex-usage-switcher>.
 
 Keep crediting the upstream open-source projects (see
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)): usage-insights logic ported

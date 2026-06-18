@@ -99,7 +99,7 @@ build/win-x64/CodexDesktopUsageSwitcher.Windows.exe
 
 ## 레포 & 라이선스
 
-- 레포: <https://github.com/JHKS24/codex-desktop-usage-switcher>
+- 레포: <https://github.com/JHKS24/codex-usage-switcher>
 - 라이선스: **MIT** © 2026 JHK24. [LICENSE](LICENSE) 참고.
 
 ## Credits

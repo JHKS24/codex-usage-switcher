@@ -102,7 +102,7 @@ See [SECURITY.md](SECURITY.md) for details.
 
 ## Repository & license
 
-- Repo: <https://github.com/JHKS24/codex-desktop-usage-switcher>
+- Repo: <https://github.com/JHKS24/codex-usage-switcher>
 - License: **MIT** © 2026 JHK24. See [LICENSE](LICENSE).
 
 ## Credits
