@@ -21,7 +21,7 @@ internal sealed class ModelPriceStore
     // The project's own reviewed price file. Overridable for tests / forks.
     public static string DefaultRemoteUrl =>
         Environment.GetEnvironmentVariable("CDUS_PRICE_URL")
-        ?? "https://raw.githubusercontent.com/cogusrlchg-wq/codex-desktop-usage-switcher/main/pricing/model_prices.json";
+        ?? "https://raw.githubusercontent.com/JHKS24/codex-desktop-usage-switcher/main/pricing/model_prices.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
