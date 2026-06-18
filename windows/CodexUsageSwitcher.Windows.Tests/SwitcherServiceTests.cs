@@ -169,6 +169,62 @@ public sealed class SwitcherServiceTests
         Assert.Equal(80, codexFive.RemainingPercent);
     }
 
+    [Fact]
+    public async Task LoadSnapshot_BuildsCodexTrayMetrics_ForEverySavedProfile()
+    {
+        const string json = """
+            {
+              "ok": true,
+              "profiles": [
+                {"profile": "alpha", "exists": true},
+                {"profile": "beta", "exists": true},
+                {"profile": "gamma", "exists": true}
+              ],
+              "current": {
+                "active_label": "alpha",
+                "matched_profile": "alpha",
+                "auth_match": "matched"
+              },
+              "usage": [
+                {"profile": "alpha", "five_hour_left": 10, "weekly_left": 20, "error": null},
+                {"profile": "beta", "five_hour_left": 30, "weekly_left": 40, "error": null},
+                {"profile": "gamma", "five_hour_left": 50, "weekly_left": 60, "error": null}
+              ],
+              "claude_usage": {
+                "ok": true,
+                "authenticated": true
+              }
+            }
+            """;
+        var client = new FakeSwitcherClient().Respond("snapshot", 0, json);
+        var service = CreateService(client, visibleMetrics: ["codexsub:week", "codexprofile:gamma:5h"]);
+
+        var snapshot = await service.LoadSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(
+            [
+                "codex:5h",
+                "codex:week",
+                "codexsub:5h",
+                "codexsub:week",
+                "codexprofile:gamma:5h",
+                "codexprofile:gamma:week",
+                "claude:5h",
+                "claude:week",
+            ],
+            snapshot.TrayMetrics.Select(metric => metric.Key).ToArray());
+
+        var betaWeek = snapshot.TrayMetrics.Single(metric => metric.Key == "codexsub:week");
+        Assert.True(betaWeek.Visible);
+        Assert.Equal(40, betaWeek.RemainingPercent);
+        Assert.Equal("프로필 beta", betaWeek.Detail);
+
+        var gammaFiveHour = snapshot.TrayMetrics.Single(metric => metric.Key == "codexprofile:gamma:5h");
+        Assert.True(gammaFiveHour.Visible);
+        Assert.Equal(50, gammaFiveHour.RemainingPercent);
+        Assert.Equal("프로필 gamma", gammaFiveHour.Detail);
+    }
+
     private static SwitcherService CreateService(FakeSwitcherClient client, string[]? visibleMetrics = null)
     {
         return new SwitcherService(
