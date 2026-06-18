@@ -38,7 +38,7 @@ internal static class InteractiveTerminal
         }
         catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException)
         {
-            return new CommandOutcome(false, -1, Localizer.F("error.terminalLaunchFailed", ex.Message));
+            return new CommandOutcome(false, -1, Localizer.F("error.terminalLaunchFailed", PathRedaction.Scrub(ex.Message)));
         }
     }
 

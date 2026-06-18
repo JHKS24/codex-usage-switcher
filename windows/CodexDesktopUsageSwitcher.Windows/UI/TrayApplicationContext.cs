@@ -158,10 +158,11 @@ internal sealed class TrayApplicationContext : ApplicationContext
         }
         catch (Exception ex)
         {
-            _lastError = ex.Message;
+            var message = PathRedaction.Scrub(ex.Message);
+            _lastError = message;
             if (showErrors)
             {
-                ShowError(ex.Message, Localizer.L("app.name"));
+                ShowError(message, Localizer.L("app.name"));
             }
         }
         finally

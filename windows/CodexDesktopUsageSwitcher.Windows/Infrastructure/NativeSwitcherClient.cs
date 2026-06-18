@@ -76,7 +76,7 @@ internal sealed class NativeSwitcherClient : ISwitcherClient
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return Fail(ExitOther, $"unexpected failure: {ex.Message}");
+            return Fail(ExitOther, $"unexpected failure: {PathRedaction.Scrub(ex.Message)}");
         }
     }
 

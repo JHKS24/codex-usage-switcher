@@ -58,7 +58,7 @@ internal sealed class HttpJsonClient : IHttpJsonClient
             // Distinguish caller cancellation (propagate) from our own timeout / a transport error
             // (degrade to a network failure the caller can render and retry later).
             cancellationToken.ThrowIfCancellationRequested();
-            return new HttpJsonResponse(false, 0, "", ex.Message);
+            return new HttpJsonResponse(false, 0, "", PathRedaction.Scrub(ex.Message));
         }
     }
 }

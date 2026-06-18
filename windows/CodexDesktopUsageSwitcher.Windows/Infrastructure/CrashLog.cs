@@ -20,7 +20,7 @@ internal static class CrashLog
             Directory.CreateDirectory(directory);
             File.AppendAllText(
                 Path.Combine(directory, "error.log"),
-                $"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}] {exception}{Environment.NewLine}");
+                $"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}] {PathRedaction.Scrub(exception.ToString())}{Environment.NewLine}");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {

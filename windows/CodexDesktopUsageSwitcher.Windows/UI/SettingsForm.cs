@@ -118,7 +118,7 @@ internal sealed class SettingsForm : Form
         }
         catch (Exception ex)
         {
-            PostStatus(Localizer.F("error.actionFailed", ex.Message), isError: true);
+            PostStatus(Localizer.F("error.actionFailed", PathRedaction.Scrub(ex.Message)), isError: true);
         }
     }
 
@@ -283,7 +283,7 @@ internal sealed class SettingsForm : Form
         {
             // A locked settings.json (sync clients, antivirus) must surface and re-render
             // so the page reverts to the authoritative state instead of the optimistic one.
-            PostStatus(Localizer.F("error.saveSettingsFailed", ex.Message), isError: true);
+            PostStatus(Localizer.F("error.saveSettingsFailed", PathRedaction.Scrub(ex.Message)), isError: true);
             await RefreshAsync().ConfigureAwait(true);
             return;
         }

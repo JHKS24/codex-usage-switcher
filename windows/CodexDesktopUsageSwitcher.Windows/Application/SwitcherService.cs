@@ -187,7 +187,7 @@ internal sealed class SwitcherService
             $"codex_running: {BoolValue(root, "codex_running")?.ToString() ?? Localizer.L("common.unknown")}",
             $"process_check: {StringValue(root, "process_check") ?? Localizer.L("common.unknown")}",
         };
-        return new CommandOutcome(true, 0, string.Join(Environment.NewLine, lines), result.Stdout, result.Stderr);
+        return new CommandOutcome(true, 0, PathRedaction.Scrub(string.Join(Environment.NewLine, lines)), result.Stdout, result.Stderr);
     }
 
     private async Task<IReadOnlyList<ProfileSummary>> LoadProfilesAsync(CancellationToken cancellationToken)

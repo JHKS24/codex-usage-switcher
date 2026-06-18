@@ -52,7 +52,7 @@ internal sealed class SensitiveFileStore
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             RestoreFromBackup(backupId, _paths.TargetAuth);
-            return new SwitchResult(false, backupId, "switch failed: " + ex.Message);
+            return new SwitchResult(false, backupId, "switch failed: " + PathRedaction.Scrub(ex.Message));
         }
     }
 
@@ -82,7 +82,7 @@ internal sealed class SensitiveFileStore
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             RestoreFromBackup(backupId, destination);
-            return new SwitchResult(false, backupId, "save failed: " + ex.Message);
+            return new SwitchResult(false, backupId, "save failed: " + PathRedaction.Scrub(ex.Message));
         }
     }
 

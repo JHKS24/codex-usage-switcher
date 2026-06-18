@@ -49,7 +49,7 @@ internal static class Program
     {
         LogError(exception);
         MessageBox.Show(
-            Localizer.F("error.unexpected.body", exception.Message),
+            Localizer.F("error.unexpected.body", PathRedaction.Scrub(exception.Message)),
             Localizer.L("common.appName"),
             MessageBoxButtons.OK,
             MessageBoxIcon.Error);

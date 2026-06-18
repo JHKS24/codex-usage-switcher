@@ -86,7 +86,7 @@ internal sealed class NativeInteractiveLauncher : IInteractiveCliLauncher
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return Fail(Localizer.F("login.error.credentialSaveFailed", ex.Message));
+            return Fail(Localizer.F("login.error.credentialSaveFailed", PathRedaction.Scrub(ex.Message)));
         }
 
         return new CommandOutcome(true, 0, Localizer.L("login.claude.success"));

@@ -52,7 +52,7 @@ internal static class CodexInstallation
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or IOException)
         {
-            return $"failed to launch Codex Desktop: {ex.Message}";
+            return $"failed to launch Codex Desktop: {PathRedaction.Scrub(ex.Message)}";
         }
     }
 
